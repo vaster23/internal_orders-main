@@ -8,14 +8,17 @@ SECRET_KEY = os.environ.get(
     'django-dev-only-change-this-before-production'
 )
 
-DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
+#DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
+DEBUG = False
+# ALLOWED_HOSTS = [
+#     host.strip()
+#     for host in os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
+#     if host.strip()
+# ]
+ALLOWED_HOSTS = ['104.105.64.114','luminexops.gr','www.luminexops.gr', 'localhost', '127.0.0.1' ]
 
-ALLOWED_HOSTS = [
-    host.strip()
-    for host in os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
-    if host.strip()
-]
-
+CSRF_TRUSTED_ORIGINS = ['https://luminexops.gr','https://www.luminexops.gr']
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO','https')
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
