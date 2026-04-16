@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} | Luminex{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block page_subtitle %}Επιβεβαίωση διαγραφής{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-8">
+        <div class="mb-6">
+            <div class="text-4xl mb-4">⚠️</div>
+            <h2 class="text-2xl font-bold text-slate-900 mb-2">{{ title }}</h2>
+            <p class="text-slate-600">{{ message }}</p>
+        </div>
+
+        <form method="post" class="flex gap-3">
+            {% csrf_token %}
+            <button
+                type="submit"
+                class="bg-rose-600 hover:bg-rose-700 text-white px-6 py-3 rounded-2xl font-semibold transition"
+            >
+                Ναι, διαγραφή
+            </button>
+
+            <a
+                href="{% url cancel_url %}"
+                class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-3 rounded-2xl font-semibold transition"
+            >
+                Ακύρωση
+            </a>
+        </form>
+    </div>
+</div>
+{% endblock %}

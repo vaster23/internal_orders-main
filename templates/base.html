@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Luminex Orders{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen">
+
+<div class="min-h-screen flex">
+
+    {% if request.user.is_authenticated %}
+    <aside class="w-72 bg-slate-950 text-white flex flex-col shadow-2xl">
+        <div class="px-6 py-6 border-b border-slate-800">
+            <div class="text-2xl font-bold tracking-wide">
+                {% if request.user.is_superuser %}
+                    Luminex Platform
+                {% else %}
+                    {% if request.user.user_company and request.user.user_company.company.display_name %}
+                        {{ request.user.user_company.company.display_name }}
+                    {% else %}
+                        Luminex
+                    {% endif %}
+                {% endif %}
+            </div>
+            <div class="text-sm text-slate-400 mt-1">
+                {% if request.user.is_superuser %}
+                    Platform Owner Panel
+                {% else %}
+                    Orders Platform
+                {% endif %}
+            </div>
+        </div>
+
+        <nav class="flex-1 px-4 py-6 space-y-2 text-sm">
+
+            {% if request.user.is_superuser %}
+                <div class="pt-2 text-xs uppercase tracking-wider text-slate-500 px-4">
+                    Platform
+                </div>
+
+                <a href="/" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 transition">
+                    <span>🏠</span>
+                    <span>Platform Home</span>
+                </a>
+
+                <a href="/platform/companies/" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 transition">
+                    <span>🏢</span>
+                    <span>Εταιρείες</span>
+                </a>
+
+                <a href="/platform/onboarding/" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 transition">
+                    <span>➕</span>
+                    <span>Νέα Εταιρεία</span>
+                </a>
+
+                <a href="/dashboard/" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 transition">
+                    <span>📊</span>
+                    <span>Platform Analytics</span>
+                </a>
+
+                <a href="/admin/" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 transition">
+                    <span>⚙️</span>
+                    <span>Platform Admin</span>
+                </a>
+
+            {% else %}
+
+                <a href="/" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 transition">
+                    <span>🏠</span>
+                    <span>Αρχική</span>
+                </a>
+
+                <a href="/orders/" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 transition">
+                    <span>📦</span>
+                    <span>Παραγγελίες</span>
+                </a>
+
+                {% if request.user.groups.all.0.name != 'driver' %}
+                <a href="/orders/shop/" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 transition">
+                    <span>➕</span>
+                    <span>Νέα Παραγγελία</span>
+                </a>
+                {% endif %}
+
+                <a href="/invoices/" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 transition">
+                    <span>📄</span>
+                    <span>Τιμολόγια</span>
+                </a>
+
+                {% if request.user.groups.all.0.name == 'admin' %}
+                <div class="pt-4 mt-4 border-t border-slate-800 text-xs uppercase tracking-wider text-slate-500 px-4">
+                    Διαχείριση
+                </div>
+
+                <a href="/users/" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 transition">
+                    <span>👤</span>
+                    <span>Χρήστες</span>
+                </a>
+
+                <a href="/dashboard/" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 transition">
+                    <span>📊</span>
+                    <span>Dashboard</span>
+                </a>
+
+                <a href="/analytics/" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 transition">
+                    <span>📈</span>
+                    <span>Analytics</span>
+                </a>
+
+                <a href="/products/" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 transition">
+                    <span>🧾</span>
+                    <span>Προϊόντα</span>
+                </a>
+
+                <a href="/income-expenses/" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 transition">
+                    <span>💸</span>
+                    <span>Έσοδα / Έξοδα</span>
+                </a>
+
+                <a href="/finance/" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 transition">
+                    <span>💰</span>
+                    <span>Finance Dashboard</span>
+                </a>
+
+                <a href="/settings/company/" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 transition">
+                    <span>🏢</span>
+                    <span>Ρυθμίσεις Εταιρείας</span>
+                </a>
+                {% endif %}
+
+            {% endif %}
+        </nav>
+
+        <div class="px-4 py-4 border-t border-slate-800">
+            <div class="bg-slate-900 rounded-2xl p-4">
+                <div class="text-sm font-semibold">{{ request.user.username }}</div>
+
+                <div class="text-xs text-slate-400 mt-1">
+                    {% if request.user.is_superuser %}
+                        Platform Owner
+                    {% elif request.user.groups.all.0.name == 'driver' %}
+                        Driver
+                    {% elif request.user.groups.all.0.name == 'admin' %}
+                        Company Admin
+                    {% else %}
+                        User
+                    {% endif %}
+                </div>
+
+                {% if not request.user.is_superuser %}
+                    {% if request.user.user_company %}
+                    <div class="mt-3 inline-flex items-center px-3 py-1 rounded-full bg-slate-800 text-xs text-slate-300">
+                        {{ request.user.user_company.company.display_name|default:request.user.user_company.company.name }}
+                    </div>
+                    {% endif %}
+                {% endif %}
+
+                <form method="post" action="{% url 'logout' %}" class="mt-4">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="w-full bg-rose-500 hover:bg-rose-600 text-white py-2.5 rounded-xl font-medium transition">
+                        Αποσύνδεση
+                    </button>
+                </form>
+            </div>
+        </div>
+    </aside>
+    {% endif %}
+
+    <div class="flex-1 flex flex-col min-h-screen">
+
+        {% if request.user.is_authenticated %}
+        <header class="bg-white border-b border-slate-200 px-8 py-5 flex items-center justify-between shadow-sm">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900">{% block page_title %}Dashboard{% endblock %}</h1>
+                <p class="text-sm text-slate-500 mt-1">{% block page_subtitle %}Εσωτερική διαχείριση παραγγελιών{% endblock %}</p>
+            </div>
+
+            <div class="flex items-center gap-3">
+                {% if not request.user.is_superuser %}
+                    {% if request.user.user_company %}
+                    <div class="bg-slate-100 text-slate-700 px-4 py-2 rounded-xl text-sm font-medium">
+                        {{ request.user.user_company.company.display_name|default:request.user.user_company.company.name }}
+                    </div>
+                    {% endif %}
+                {% endif %}
+
+                <div class="bg-slate-900 text-white px-4 py-2 rounded-xl text-sm font-medium">
+                    {{ request.user.username }}
+                </div>
+            </div>
+        </header>
+        {% endif %}
+
+        <main class="flex-1 p-8">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</div>
+
+{% block extra_scripts %}{% endblock %}
+<footer class="mt-10 border-t border-slate-200 bg-white">
+    <div class="max-w-7xl mx-auto px-6 py-6 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
+
+        <div>
+            © {{ now|default:"2026" }} Luminex Orders
+        </div>
+
+        <div class="flex items-center gap-6">
+            <a href="{% url 'privacy_policy' %}" class="hover:text-slate-900">Privacy</a>
+            <a href="{% url 'terms' %}" class="hover:text-slate-900">Terms</a>
+            <a href="{% url 'cookies' %}" class="hover:text-slate-900">Cookies</a>
+        </div>
+
+    </div>
+</footer>
+</body>
+</html>

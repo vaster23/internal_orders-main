@@ -1,0 +1,74 @@
+{% extends "core/base.html" %}
+
+{% block title %}Branches{% endblock %}
+{% block page_title %}Branches{% endblock %}
+
+{% block content %}
+
+<div class="max-w-7xl mx-auto space-y-6">
+
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900">Branches</h1>
+            <p class="text-slate-500 mt-2">
+                Προβολή και επεξεργασία όλων των branches.
+            </p>
+        </div>
+
+        <a href="{% url 'products:branch_add' %}"
+           class="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-slate-900 text-white font-medium hover:bg-slate-800 transition">
+            + Προσθήκη Branch
+        </a>
+
+        <a href="{% url 'dashboard' %}"
+           class="inline-flex items-center px-4 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition">
+            Πίσω
+        </a>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 text-slate-500">
+                    <tr>
+                        <th class="px-6 py-4 text-left font-semibold">ID</th>
+                        <th class="px-6 py-4 text-left font-semibold">Όνομα</th>
+                        <th class="px-6 py-4 text-left font-semibold">Ενέργειες</th>
+                    </tr>
+                </thead>
+
+                <tbody class="divide-y divide-slate-100">
+                    {% for branch in branches %}
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="px-6 py-4">{{ branch.id }}</td>
+                        <td class="px-6 py-4 font-medium text-slate-900">{{ branch.name }}</td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <form method="post"
+                                      action="{% url 'products:branch_delete' branch.id %}"
+                                      class="inline-block"
+                                      onsubmit="return confirm('Είσαι σίγουρος ότι θέλεις να διαγράψεις την branch {{ branch.name }};');">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                            class="inline-flex items-center px-4 py-2 rounded-xl border border-red-300 bg-white text-red-700 hover:bg-red-50 transition">
+                                        Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-8 text-center text-slate-500">
+                            Δεν υπάρχουν branches.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

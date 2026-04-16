@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}{{ order.order_code }} | Luminex{% endblock %}
+{% block page_title %}Παραγγελία {{ order.order_code }}{% endblock %}
+{% block page_subtitle %}Αναλυτική εικόνα παραγγελίας και εκτιμώμενης παράδοσης{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-8">
+
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
+        <div class="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4">
+            <div>
+                <div class="text-3xl font-bold text-slate-900">{{ order.order_code }}</div>
+                <div class="text-sm text-slate-500 mt-2">
+                    Δημιουργήθηκε {{ order.created_at|date:"d/m/Y H:i" }}
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+                {% for key, label in timeline %}
+                    {% if order.status == key %}
+                        <span class="px-4 py-2 rounded-full bg-slate-900 text-white text-sm font-semibold">
+                            {{ label }}
+                        </span>
+                    {% else %}
+                        <span class="px-4 py-2 rounded-full bg-slate-100 text-slate-600 text-sm">
+                            {{ label }}
+                        </span>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 xl:grid-cols-4 gap-6">
+        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Αφετηρία</div>
+            <div class="text-lg font-semibold text-slate-900">{{ order.source_branch.name }}</div>
+        </div>
+
+        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Προορισμός</div>
+            <div class="text-lg font-semibold text-slate-900">{{ order.destination_branch.name }}</div>
+        </div>
+
+        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Δημιουργός</div>
+            <div class="text-lg font-semibold text-slate-900">
+                {% if order.created_by %}
+                    {{ order.created_by.username }}
+                {% else %}
+                    —
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Οδηγός</div>
+            <div class="text-lg font-semibold text-slate-900">
+                {% if order.assigned_driver %}
+                    {{ order.assigned_driver.username }}
+                {% else %}
+                    Δεν έχει ανατεθεί
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="grid xl:grid-cols-3 gap-6">
+        <div class="xl:col-span-2 bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-6 border-b border-slate-200">
+                <h2 class="text-lg font-bold text-slate-900">Προϊόντα Παραγγελίας</h2>
+            </div>
+
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50 text-slate-600">
+                    <tr>
+                        <th class="text-left px-6 py-4 font-semibold">Προϊόν</th>
+                        <th class="text-left px-6 py-4 font-semibold">Ποσότητα</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in order.visible_items %}
+                    <tr class="border-t border-slate-200">
+                        <td class="px-6 py-4 text-slate-800">{{ item.product.name }}</td>
+                        <td class="px-6 py-4 text-slate-700">{{ item.quantity }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="2" class="px-6 py-10 text-center text-slate-500">
+                            Δεν υπάρχουν προϊόντα.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="space-y-6">
+            <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
+                <h2 class="text-lg font-bold text-slate-900 mb-4">ETA Παράδοσης</h2>
+
+                {% if order.estimated_minutes %}
+                    <div class="text-sm text-slate-500 mb-2">Εκτιμώμενος χρόνος</div>
+                    <div class="text-3xl font-bold text-slate-900 mb-4">
+                        {{ order.estimated_minutes }} λεπτά
+                    </div>
+                {% endif %}
+
+                {% if order.estimated_arrival %}
+                    <div class="text-sm text-slate-500 mb-2">Εκτιμώμενη ώρα άφιξης</div>
+                    <div class="text-lg font-semibold text-slate-900 mb-4">
+                        {{ order.estimated_arrival|date:"d/m/Y H:i" }}
+                    </div>
+                {% else %}
+                    <div class="text-slate-500 text-sm">
+                        Δεν υπάρχει ακόμα ETA.
+                    </div>
+                {% endif %}
+
+                {% if eta_status == 'on_time' %}
+                    <div class="mt-4 px-4 py-3 rounded-2xl bg-sky-100 text-sky-700 font-medium">
+                        Η παράδοση αναμένεται στην ώρα της.
+                    </div>
+                {% elif eta_status == 'delayed' %}
+                    <div class="mt-4 px-4 py-3 rounded-2xl bg-rose-100 text-rose-700 font-medium">
+                        Η παράδοση καθυστερεί σε σχέση με το ETA.
+                    </div>
+                {% elif eta_status == 'delivered_on_time' %}
+                    <div class="mt-4 px-4 py-3 rounded-2xl bg-emerald-100 text-emerald-700 font-medium">
+                        Η παραγγελία παραδόθηκε εντός εκτιμώμενου χρόνου.
+                    </div>
+                {% elif eta_status == 'delivered_late' %}
+                    <div class="mt-4 px-4 py-3 rounded-2xl bg-amber-100 text-amber-700 font-medium">
+                        Η παραγγελία παραδόθηκε με καθυστέρηση.
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
+                <h2 class="text-lg font-bold text-slate-900 mb-4">Χρόνοι</h2>
+
+                <div class="space-y-3 text-sm">
+                    <div>
+                        <div class="text-slate-500">Δημιουργία</div>
+                        <div class="font-medium text-slate-900">{{ order.created_at|date:"d/m/Y H:i" }}</div>
+                    </div>
+
+                    <div>
+                        <div class="text-slate-500">Παραλαβή από οδηγό</div>
+                        <div class="font-medium text-slate-900">
+                            {% if order.picked_up_at %}
+                                {{ order.picked_up_at|date:"d/m/Y H:i" }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="text-slate-500">Παράδοση</div>
+                        <div class="font-medium text-slate-900">
+                            {% if order.delivered_at %}
+                                {{ order.delivered_at|date:"d/m/Y H:i" }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if order.notes %}
+    <div class="bg-amber-50 border border-amber-200 rounded-3xl p-6">
+        <div class="font-semibold text-amber-900 mb-2">Σημειώσεις</div>
+        <div class="text-amber-800">{{ order.notes }}</div>
+    </div>
+    {% endif %}
+
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
+        <h2 class="text-lg font-bold text-slate-900 mb-5">Ιστορικό Κατάστασης</h2>
+
+        <div class="space-y-4">
+            {% for log in order.status_logs.all %}
+            <div class="flex items-start gap-4">
+                <div class="w-3 h-3 rounded-full bg-slate-900 mt-2"></div>
+                <div>
+                    <div class="font-semibold text-slate-900">{{ log.new_status }}</div>
+                    <div class="text-sm text-slate-500">
+                        {{ log.created_at|date:"d/m/Y H:i" }}
+                        {% if log.changed_by %} · {{ log.changed_by.username }}{% endif %}
+                    </div>
+                    {% if log.comment %}
+                    <div class="text-sm text-slate-700 mt-1">{{ log.comment }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-slate-500">Δεν υπάρχει ιστορικό αλλαγών.</div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

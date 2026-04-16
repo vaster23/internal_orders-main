@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Platform Analytics | Luminex{% endblock %}
+{% block page_title %}Platform Analytics{% endblock %}
+{% block page_subtitle %}Συγκεντρωτικά στατιστικά όλων των πελατών{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-8">
+
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6">
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Εταιρείες</div>
+            <div class="text-4xl font-bold text-slate-900">{{ total_companies }}</div>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Ενεργές</div>
+            <div class="text-4xl font-bold text-emerald-600">{{ active_companies }}</div>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Ανενεργές</div>
+            <div class="text-4xl font-bold text-rose-600">{{ inactive_companies }}</div>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Χρήστες</div>
+            <div class="text-4xl font-bold text-slate-900">{{ total_users }}</div>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Branches</div>
+            <div class="text-4xl font-bold text-slate-900">{{ total_branches }}</div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Σύνολο Orders</div>
+            <div class="text-4xl font-bold text-sky-600">{{ total_orders }}</div>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Drivers</div>
+            <div class="text-4xl font-bold text-violet-600">{{ total_drivers }}</div>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Invoices</div>
+            <div class="text-4xl font-bold text-amber-600">{{ total_invoices }}</div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-200 flex items-center justify-between">
+            <div>
+                <h2 class="text-lg font-bold text-slate-900">Υγεία Πελατών / Company Health</h2>
+                <p class="text-sm text-slate-500 mt-1">Ποιοι πελάτες χρησιμοποιούν ουσιαστικά την πλατφόρμα</p>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50">
+                    <tr class="text-slate-600">
+                        <th class="text-left px-6 py-4 font-semibold">Εταιρεία</th>
+                        <th class="text-left px-6 py-4 font-semibold">Χρήστες</th>
+                        <th class="text-left px-6 py-4 font-semibold">Drivers</th>
+                        <th class="text-left px-6 py-4 font-semibold">Branches</th>
+                        <th class="text-left px-6 py-4 font-semibold">Orders</th>
+                        <th class="text-left px-6 py-4 font-semibold">Invoices</th>
+                        <th class="text-left px-6 py-4 font-semibold">Κατάσταση</th>
+                        <th class="text-left px-6 py-4 font-semibold">Health</th>
+                        <th class="text-left px-6 py-4 font-semibold">Ενέργεια</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in company_rows %}
+                    <tr class="border-t border-slate-200 hover:bg-slate-50">
+                        <td class="px-6 py-4 font-semibold text-slate-900">
+                            {{ row.company.display_name|default:row.company.name }}
+                        </td>
+                        <td class="px-6 py-4 text-slate-700">{{ row.users_count }}</td>
+                        <td class="px-6 py-4 text-slate-700">{{ row.drivers_count }}</td>
+                        <td class="px-6 py-4 text-slate-700">{{ row.branches_count }}</td>
+                        <td class="px-6 py-4 text-slate-700">{{ row.orders_count }}</td>
+                        <td class="px-6 py-4 text-slate-700">{{ row.invoices_count }}</td>
+                        <td class="px-6 py-4">
+                            {% if row.company.active %}
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700">Ενεργή</span>
+                            {% else %}
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-700">Ανενεργή</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if row.health == 'high' %}
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700">High</span>
+                            {% elif row.health == 'medium' %}
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-sky-100 text-sky-700">Medium</span>
+                            {% elif row.health == 'low' %}
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-700">Low</span>
+                            {% else %}
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-slate-200 text-slate-700">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            <a href="{% url 'platform_company_detail' row.company.id %}" class="px-3 py-2 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200">
+                                View
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="px-6 py-12 text-center text-slate-500">
+                            Δεν υπάρχουν εταιρείες.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

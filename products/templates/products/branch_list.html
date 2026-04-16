@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Υποκαταστήματα | Luminex{% endblock %}
+{% block page_title %}Υποκαταστήματα{% endblock %}
+{% block page_subtitle %}Τοποθεσίες & GPS για διανομές{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-bold">Υποκαταστήματα</h2>
+
+        <a href="{% url 'products:branch_add' %}"
+           class="bg-slate-900 text-white px-5 py-3 rounded-2xl font-semibold">
+            ➕ Νέο Υποκατάστημα
+        </a>
+    </div>
+
+    <div class="grid gap-5">
+        {% for branch in branches %}
+        <div class="bg-white rounded-3xl border p-6 shadow-sm">
+
+            <div class="flex justify-between items-center mb-3">
+                <div class="text-lg font-bold">{{ branch.name }}</div>
+
+                <div class="flex gap-2">
+                    <a href="{% url 'products:branch_edit' branch.id %}"
+                       class="px-4 py-2 bg-amber-100 rounded-xl">Edit</a>
+                    <a href="{% url 'products:branch_delete' branch.id %}"
+                       class="px-4 py-2 bg-rose-100 rounded-xl">Delete</a>
+                </div>
+            </div>
+
+            <div class="text-sm text-slate-500 mb-2">
+                📍 {{ branch.address }}
+            </div>
+
+            <div class="text-xs text-slate-400">
+                Lat: {{ branch.latitude }} | Lng: {{ branch.longitude }}
+            </div>
+
+        </div>
+        {% empty %}
+        <div class="text-center p-10 bg-white rounded-3xl">
+            Δεν υπάρχουν υποκαταστήματα
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

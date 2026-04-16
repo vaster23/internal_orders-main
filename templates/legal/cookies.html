@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Πολιτική Cookies | Luminex{% endblock %}
+{% block page_title %}Πολιτική Cookies{% endblock %}
+{% block page_subtitle %}Ενημέρωση για τη χρήση cookies στην πλατφόρμα{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 space-y-6">
+        <section>
+            <h2 class="text-xl font-bold text-slate-900 mb-3">1. Τι είναι τα cookies</h2>
+            <p class="text-slate-700 leading-7">
+                Τα cookies είναι μικρά αρχεία κειμένου που αποθηκεύονται στη συσκευή του χρήστη όταν
+                επισκέπτεται μια ιστοσελίδα ή χρησιμοποιεί μια διαδικτυακή υπηρεσία.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="text-xl font-bold text-slate-900 mb-3">2. Ποια cookies χρησιμοποιούμε</h2>
+            <p class="text-slate-700 leading-7">
+                Η πλατφόρμα χρησιμοποιεί κυρίως απαραίτητα cookies σύνδεσης και λειτουργίας,
+                ώστε να επιτρέπεται η ασφαλής είσοδος χρηστών και η ορθή λειτουργία του συστήματος.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="text-xl font-bold text-slate-900 mb-3">3. Απαραίτητα cookies</h2>
+            <p class="text-slate-700 leading-7">
+                Τα απαραίτητα cookies βοηθούν στη διατήρηση της συνεδρίας σύνδεσης, στην ασφάλεια
+                και στη σωστή λειτουργία της πλατφόρμας. Χωρίς αυτά, βασικά τμήματα της υπηρεσίας
+                δεν λειτουργούν σωστά.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="text-xl font-bold text-slate-900 mb-3">4. Analytics ή marketing cookies</h2>
+            <p class="text-slate-700 leading-7">
+                Αυτή τη στιγμή η πλατφόρμα δεν χρησιμοποιεί cookies διαφημιστικού σκοπού ή προαιρετικά
+                cookies παρακολούθησης χρήσης, εκτός αν αυτό δηλωθεί ρητά με μεταγενέστερη ενημέρωση.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="text-xl font-bold text-slate-900 mb-3">5. Διαχείριση cookies</h2>
+            <p class="text-slate-700 leading-7">
+                Ο χρήστης μπορεί να ρυθμίσει ή να διαγράψει cookies μέσα από τις ρυθμίσεις του browser του.
+                Ωστόσο, η απενεργοποίηση απαραίτητων cookies μπορεί να επηρεάσει τη λειτουργικότητα της πλατφόρμας.
+            </p>
+        </section>
+
+        <section class="pt-2 border-t border-slate-200">
+            <p class="text-sm text-slate-500">
+                Τελευταία ενημέρωση: {{ now|default:"Σήμερα" }}
+            </p>
+        </section>
+    </div>
+</div>
+{% endblock %}

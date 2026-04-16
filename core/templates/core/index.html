@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Αρχική | Luminex{% endblock %}
+{% block page_title %}Κεντρική Εικόνα{% endblock %}
+{% block page_subtitle %}Συνοπτική εικόνα της δραστηριότητας σας{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-8">
+
+    {% if company_error %}
+    <div class="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-rose-700 shadow-sm">
+        {{ company_error }}
+    </div>
+    {% endif %}
+
+    {% if platform_mode %}
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-8">
+        <h2 class="text-2xl font-bold text-slate-900 mb-3">Platform Owner Mode</h2>
+        <p class="text-slate-600 mb-6">Διαχειρίζεστε την πλατφόρμα κεντρικά. Μεταβείτε στις εταιρείες για πλήρη εικόνα πελατών.</p>
+
+        <a href="/platform/companies/" class="inline-flex items-center bg-slate-900 text-white px-6 py-3 rounded-2xl font-semibold">
+            Μετάβαση στις Εταιρείες
+        </a>
+    </div>
+    {% endif %}
+
+    {% if is_admin and company %}
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Σύνολο Παραγγελιών</div>
+            <div class="text-4xl font-bold text-slate-900">{{ total_orders }}</div>
+        </div>
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Έτοιμες για Παραλαβή</div>
+            <div class="text-4xl font-bold text-sky-600">{{ ready_for_pickup_orders }}</div>
+        </div>
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Σε Διαδρομή</div>
+            <div class="text-4xl font-bold text-violet-600">{{ picked_up_orders }}</div>
+        </div>
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Παραδομένες</div>
+            <div class="text-4xl font-bold text-emerald-600">{{ delivered_orders }}</div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-200">
+            <h2 class="text-lg font-bold text-slate-900">Πρόσφατες Παραγγελίες</h2>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6">
+    <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+        <div class="text-sm text-slate-500 mb-2">Σύνολο Εσόδων</div>
+        <div class="text-3xl font-bold text-emerald-600">{{ home_total_income }} €</div>
+    </div>
+
+    <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+        <div class="text-sm text-slate-500 mb-2">Σύνολο Εξόδων</div>
+        <div class="text-3xl font-bold text-rose-600">{{ home_total_expense }} €</div>
+    </div>
+
+    <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+        <div class="text-sm text-slate-500 mb-2">Καθαρό Αποτέλεσμα</div>
+        <div class="text-3xl font-bold text-slate-900">{{ home_net }} €</div>
+    </div>
+
+    <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+        <div class="text-sm text-slate-500 mb-2">Εκκρεμή Τιμολόγια</div>
+        <div class="text-3xl font-bold text-amber-600">{{ home_pending_invoices }}</div>
+    </div>
+
+    <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+        <div class="text-sm text-slate-500 mb-2">Ληξιπρόθεσμα</div>
+        <div class="text-3xl font-bold text-rose-600">{{ home_overdue_invoices }}</div>
+    </div>
+</div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50">
+                    <tr class="text-slate-600">
+                        <th class="text-left px-6 py-4 font-semibold">Κωδικός</th>
+                        <th class="text-left px-6 py-4 font-semibold">Από</th>
+                        <th class="text-left px-6 py-4 font-semibold">Προς</th>
+                        <th class="text-left px-6 py-4 font-semibold">Οδηγός</th>
+                        <th class="text-left px-6 py-4 font-semibold">Ημερομηνία</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in recent_orders %}
+                    <tr class="border-t border-slate-200">
+                        <td class="px-6 py-4 font-semibold text-slate-900">{{ order.order_code }}</td>
+                        <td class="px-6 py-4 text-slate-700">{{ order.source_branch.name }}</td>
+                        <td class="px-6 py-4 text-slate-700">{{ order.destination_branch.name }}</td>
+                        <td class="px-6 py-4 text-slate-700">
+                            {% if order.assigned_driver %}{{ order.assigned_driver.username }}{% else %}—{% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-slate-500">{{ order.created_at|date:"d/m/Y H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-12 text-center text-slate-500">Δεν υπάρχουν παραγγελίες.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if is_driver and company %}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Έτοιμες για Παραλαβή</div>
+            <div class="text-4xl font-bold text-sky-600">{{ ready_orders|length }}</div>
+        </div>
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Ενεργές Διαδρομές</div>
+            <div class="text-4xl font-bold text-violet-600">{{ active_deliveries|length }}</div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if not is_admin and not is_driver and company %}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Σύνολο Παραγγελιών</div>
+            <div class="text-4xl font-bold text-slate-900">{{ my_total_orders }}</div>
+        </div>
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Ανοιχτές</div>
+            <div class="text-4xl font-bold text-amber-600">{{ my_open_orders }}</div>
+        </div>
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Παραδομένες</div>
+            <div class="text-4xl font-bold text-emerald-600">{{ my_delivered_orders }}</div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

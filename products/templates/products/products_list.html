@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Προϊόντα | Luminex{% endblock %}
+{% block page_title %}Προϊόντα{% endblock %}
+{% block page_subtitle %}Κεντρική διαχείριση προϊόντων, κατηγοριών, μονάδων και υποκαταστημάτων{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+        <div>
+            <h2 class="text-xl font-bold text-slate-900">Λίστα Προϊόντων</h2>
+            <p class="text-sm text-slate-500 mt-1">Οργάνωση και διαχείριση του καταλόγου προϊόντων.</p>
+        </div>
+
+        <div class="flex flex-wrap gap-3">
+            <a href="{% url 'products:product_add' %}"
+               class="bg-slate-900 hover:bg-slate-800 text-white px-5 py-3 rounded-2xl font-semibold transition shadow-sm">
+                ➕ Νέο Προϊόν
+            </a>
+
+            <a href="{% url 'products:category_list' %}"
+               class="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-5 py-3 rounded-2xl font-semibold transition">
+                Κατηγορίες
+            </a>
+
+            <a href="{% url 'products:unit_list' %}"
+               class="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-5 py-3 rounded-2xl font-semibold transition">
+                Μονάδες
+            </a>
+
+            <a href="{% url 'products:branch_list' %}"
+               class="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-5 py-3 rounded-2xl font-semibold transition">
+                Υποκαταστήματα
+            </a>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50">
+                    <tr class="text-slate-600">
+                        <th class="text-left px-6 py-4 font-semibold">Προϊόν</th>
+                        <th class="text-left px-6 py-4 font-semibold">Κατηγορία</th>
+                        <th class="text-left px-6 py-4 font-semibold">Υποκατάστημα</th>
+                        <th class="text-left px-6 py-4 font-semibold">Μονάδα</th>
+                        <th class="text-left px-6 py-4 font-semibold">Κατάσταση</th>
+                        <th class="text-left px-6 py-4 font-semibold">Ενέργειες</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr class="border-t border-slate-200 hover:bg-slate-50 transition">
+                        <td class="px-6 py-4">
+                            <div class="font-semibold text-slate-900">{{ product.name }}</div>
+                            {% if product.description %}
+                                <div class="text-xs text-slate-500 mt-1">{{ product.description }}</div>
+                            {% endif %}
+                        </td>
+
+                        <td class="px-6 py-4 text-slate-700">{{ product.category.name }}</td>
+                        <td class="px-6 py-4 text-slate-700">{{ product.branch.name }}</td>
+                        <td class="px-6 py-4 text-slate-700">{{ product.unit.code }}</td>
+
+                        <td class="px-6 py-4">
+                            {% if product.active %}
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700">
+                                    Ενεργό
+                                </span>
+                            {% else %}
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-700">
+                                    Ανενεργό
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <td class="px-6 py-4">
+                            <div class="flex flex-wrap gap-2">
+                                <a href="{% url 'products:product_edit' product.id %}"
+                                   class="px-4 py-2 rounded-xl bg-amber-100 text-amber-700 hover:bg-amber-200 font-medium transition">
+                                    Επεξεργασία
+                                </a>
+
+                                <a href="{% url 'products:product_delete' product.id %}"
+                                   class="px-4 py-2 rounded-xl bg-rose-100 text-rose-700 hover:bg-rose-200 font-medium transition">
+                                    Διαγραφή
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center">
+                            <div class="text-5xl mb-4">📦</div>
+                            <div class="text-lg font-bold text-slate-900 mb-2">Δεν υπάρχουν προϊόντα</div>
+                            <div class="text-slate-500">Πρόσθεσε το πρώτο προϊόν για να ξεκινήσεις.</div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

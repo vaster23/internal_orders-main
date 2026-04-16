@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}403 | Luminex{% endblock %}
+{% block page_title %}403 - Πρόσβαση μη επιτρεπτή{% endblock %}
+{% block page_subtitle %}Δεν έχεις δικαιώματα για αυτή τη σελίδα{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-10 text-center">
+        <div class="text-6xl mb-4">🔒</div>
+        <h2 class="text-3xl font-bold text-slate-900 mb-3">403 - Access Denied</h2>
+        <p class="text-slate-600 mb-6">Δεν έχεις το κατάλληλο δικαίωμα πρόσβασης για αυτή τη σελίδα.</p>
+        <a href="/" class="bg-slate-900 text-white px-6 py-3 rounded-2xl font-semibold">Επιστροφή στην αρχική</a>
+    </div>
+</div>
+{% endblock %}

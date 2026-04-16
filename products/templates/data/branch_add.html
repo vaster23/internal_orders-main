@@ -1,0 +1,54 @@
+{% extends "core/base.html" %}
+
+{% block title %}Προσθήκη Branch{% endblock %}
+{% block page_title %}Προσθήκη Branch{% endblock %}
+
+{% block content %}
+
+<div class="max-w-3xl mx-auto space-y-6">
+
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900">Νέα Branch</h1>
+            <p class="text-slate-500 mt-2">Δημιουργία νέας branch.</p>
+        </div>
+
+        <a href="{% url 'products:branch_list' %}"
+           class="inline-flex items-center px-4 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition">
+            Πίσω
+        </a>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-8">
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+
+            {% if error %}
+            <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm">
+                {{ error }}
+            </div>
+            {% endif %}
+
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">Όνομα</label>
+                <input type="text" name="name" class="w-full rounded-xl border border-slate-300 px-4 py-3">
+            </div>
+
+
+            <div class="pt-4 flex items-center gap-4">
+                <button type="submit"
+                        class="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-slate-900 text-white font-medium hover:bg-slate-800 transition">
+                    Αποθήκευση
+                </button>
+
+                <a href="{% url 'products:product_list' %}"
+                   class="inline-flex items-center justify-center px-6 py-3 rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition">
+                    Ακύρωση
+                </a>
+            </div>
+        </form>
+    </div>
+
+</div>
+
+{% endblock %}

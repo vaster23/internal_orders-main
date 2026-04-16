@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Finance Dashboard | Luminex{% endblock %}
+{% block page_title %}Finance Dashboard{% endblock %}
+{% block page_subtitle %}Ημερήσια, μηνιαία και ετήσια οικονομική εικόνα{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-8">
+
+    <div>
+        <h2 class="text-xl font-bold text-slate-900 mb-4">Ημέρα</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+                <div class="text-sm text-slate-500 mb-2">Έσοδα Ημέρας</div>
+                <div class="text-4xl font-bold text-emerald-600">{{ today_income }} €</div>
+            </div>
+            <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+                <div class="text-sm text-slate-500 mb-2">Έξοδα Ημέρας</div>
+                <div class="text-4xl font-bold text-rose-600">{{ today_expense }} €</div>
+            </div>
+            <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+                <div class="text-sm text-slate-500 mb-2">Καθαρό Ημέρας</div>
+                <div class="text-4xl font-bold text-slate-900">{{ today_net }} €</div>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <h2 class="text-xl font-bold text-slate-900 mb-4">Μήνας</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+                <div class="text-sm text-slate-500 mb-2">Έσοδα Μήνα</div>
+                <div class="text-4xl font-bold text-emerald-600">{{ month_income }} €</div>
+            </div>
+            <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+                <div class="text-sm text-slate-500 mb-2">Έξοδα Μήνα</div>
+                <div class="text-4xl font-bold text-rose-600">{{ month_expense }} €</div>
+            </div>
+            <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+                <div class="text-sm text-slate-500 mb-2">Καθαρό Μήνα</div>
+                <div class="text-4xl font-bold text-slate-900">{{ month_net }} €</div>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <h2 class="text-xl font-bold text-slate-900 mb-4">Έτος</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+                <div class="text-sm text-slate-500 mb-2">Έσοδα Έτους</div>
+                <div class="text-4xl font-bold text-emerald-600">{{ year_income }} €</div>
+            </div>
+            <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+                <div class="text-sm text-slate-500 mb-2">Έξοδα Έτους</div>
+                <div class="text-4xl font-bold text-rose-600">{{ year_expense }} €</div>
+            </div>
+            <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+                <div class="text-sm text-slate-500 mb-2">Καθαρό Έτους</div>
+                <div class="text-4xl font-bold text-slate-900">{{ year_net }} €</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

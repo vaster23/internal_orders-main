@@ -1,0 +1,617 @@
+{% extends "base.html" %}
+
+{% block title %}Παραγγελίες | Luminex{% endblock %}
+{% block page_title %}{% if is_driver %}Πίνακας Διανομών{% else %}Παραγγελίες{% endif %}{% endblock %}
+{% block page_subtitle %}
+    {% if is_driver %}
+        Παραλαβές, ενεργές διαδρομές και ολοκληρωμένες παραδόσεις
+    {% else %}
+        Παρακολούθηση, διαχείριση και διανομή εσωτερικών παραγγελιών
+    {% endif %}
+{% endblock %}
+
+{% block extra_head %}
+<link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+/>
+<style>
+    .delivery-map {
+        height: 260px;
+        width: 100%;
+        border-radius: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+
+    {% if error %}
+        <div class="mb-6 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-rose-700 shadow-sm">
+            {{ error }}
+        </div>
+    {% endif %}
+
+    {% if success %}
+        <div class="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-emerald-700 shadow-sm">
+            {{ success }}
+        </div>
+    {% endif %}
+
+    <form method="get" class="mb-6 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+        <div class="grid md:grid-cols-6 gap-4">
+            <input
+                type="text"
+                name="q"
+                placeholder="Αναζήτηση κωδικού..."
+                value="{{ filters.q }}"
+                class="px-4 py-3 rounded-2xl border border-slate-300"
+            >
+
+            <select name="status" class="px-4 py-3 rounded-2xl border border-slate-300">
+                <option value="">Όλα τα status</option>
+                {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if filters.status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+
+            <select name="branch" class="px-4 py-3 rounded-2xl border border-slate-300">
+                <option value="">Όλα τα υποκαταστήματα</option>
+                {% for b in branches %}
+                    <option value="{{ b.id }}" {% if filters.branch == b.id|stringformat:"s" %}selected{% endif %}>
+                        {{ b.name }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <select name="driver" class="px-4 py-3 rounded-2xl border border-slate-300">
+                <option value="">Όλοι οι drivers</option>
+                {% for d in drivers %}
+                    <option value="{{ d.id }}" {% if filters.driver == d.id|stringformat:"s" %}selected{% endif %}>
+                        {{ d.username }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <input
+                type="date"
+                name="date_from"
+                value="{{ filters.date_from }}"
+                class="px-4 py-3 rounded-2xl border border-slate-300"
+            >
+
+            <input
+                type="date"
+                name="date_to"
+                value="{{ filters.date_to }}"
+                class="px-4 py-3 rounded-2xl border border-slate-300"
+            >
+        </div>
+
+       <div class="mt-4 flex gap-3">
+    <button class="bg-slate-900 text-white px-6 py-3 rounded-2xl font-semibold">
+        🔍 Φιλτράρισμα
+    </button>
+
+    <a href="/orders/" class="bg-slate-100 px-6 py-3 rounded-2xl font-semibold">
+        Reset
+    </a>
+
+    {% if not is_driver %}
+    <a href="{% url 'orders:export_orders_csv' %}?q={{ filters.q }}&status={{ filters.status }}&branch={{ filters.branch }}&driver={{ filters.driver }}&date_from={{ filters.date_from }}&date_to={{ filters.date_to }}"
+       class="bg-emerald-100 text-emerald-700 px-6 py-3 rounded-2xl font-semibold">
+        Export CSV
+    </a>
+    {% endif %}
+</div>
+    </form>
+
+    {% if is_driver %}
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Έτοιμες για Παραλαβή</div>
+            <div class="text-4xl font-bold text-sky-600">{{ available_pickups|length }}</div>
+        </div>
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Ενεργές Διαδρομές</div>
+            <div class="text-4xl font-bold text-violet-600">{{ active_deliveries|length }}</div>
+        </div>
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Ολοκληρωμένες</div>
+            <div class="text-4xl font-bold text-emerald-600">{{ completed_deliveries|length }}</div>
+        </div>
+    </div>
+
+    <div class="space-y-8">
+
+        <section>
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900">Έτοιμες για Παραλαβή</h2>
+                    <p class="text-sm text-slate-500 mt-1">Παραγγελίες που μπορούν να παραληφθούν άμεσα</p>
+                </div>
+            </div>
+
+            <div class="grid gap-5">
+                {% for order in available_pickups %}
+                <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm hover:shadow-lg transition">
+                    <div class="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4 mb-5">
+                        <div>
+                            <div class="text-xl font-bold text-slate-900"><a href="{% url 'orders:order_detail' order.id %}" class="hover:underline font-semibold text-slate-900">
+    {{ order.order_code }}
+</a></div>
+                            <div class="text-sm text-slate-500 mt-1">{{ order.source_branch.name }} → {{ order.destination_branch.name }}</div>
+                        </div>
+
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-4 py-2 text-xs font-semibold rounded-full bg-sky-100 text-sky-700">Έτοιμη για παραλαβή</span>
+                            {% if order.priority == 'urgent' %}
+                                <span class="px-4 py-2 text-xs font-semibold rounded-full bg-rose-100 text-rose-700">Επείγουσα</span>
+                            {% elif order.priority == 'high' %}
+                                <span class="px-4 py-2 text-xs font-semibold rounded-full bg-orange-100 text-orange-700">Υψηλή</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="grid lg:grid-cols-2 gap-6 mb-5">
+                        <div>
+                            <div class="grid md:grid-cols-2 gap-4 mb-5">
+                                <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
+                                    <div class="text-xs uppercase tracking-wide text-slate-500 mb-2">Αφετηρία</div>
+                                    <div class="font-semibold text-slate-900">{{ order.source_branch.name }}</div>
+                                </div>
+                                <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
+                                    <div class="text-xs uppercase tracking-wide text-slate-500 mb-2">Προορισμός</div>
+                                    <div class="font-semibold text-slate-900">{{ order.destination_branch.name }}</div>
+                                </div>
+                            </div>
+
+                            <div class="mb-5">
+                                <div class="text-sm font-semibold text-slate-800 mb-3">Προϊόντα</div>
+                                <div class="overflow-hidden rounded-2xl border border-slate-200">
+                                    <table class="w-full text-sm">
+                                        <thead class="bg-slate-50 text-slate-600">
+                                            <tr>
+                                                <th class="text-left px-4 py-3 font-semibold">Προϊόν</th>
+                                                <th class="text-left px-4 py-3 font-semibold">Ποσότητα</th>
+                                                <th class="text-left px-4 py-3 font-semibold">Μονάδα</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for item in order.visible_items %}
+                                            <tr class="border-t border-slate-200">
+                                                <td class="px-4 py-3">{{ item.product.name }}</td>
+                                                <td class="px-4 py-3">{{ item.quantity }}</td>
+                                                <td class="px-4 py-3">{{ item.product.unit.code }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <form method="post" action="{% url 'orders:driver_pickup_order' order.id %}">
+                                {% csrf_token %}
+                                <button class="w-full sm:w-auto bg-sky-600 hover:bg-sky-700 text-white px-6 py-3 rounded-2xl font-semibold shadow-sm transition">
+                                    📦 Παραλαβή Παραγγελίας
+                                </button>
+                            </form>
+                        </div>
+
+                        <div>
+                            {% if order.has_map_data %}
+                            <div class="rounded-2xl border border-slate-200 p-4 bg-slate-50">
+                                <div class="text-sm font-semibold text-slate-800 mb-3">Προεπισκόπηση Διαδρομής</div>
+                                <div id="{{ order.map_id }}" class="delivery-map"></div>
+                            </div>
+                            {% else %}
+                            <div class="rounded-2xl border border-dashed border-slate-300 p-6 bg-slate-50 text-slate-500 text-sm">
+                                Δεν υπάρχουν ακόμα coordinates στα υποκαταστήματα για προβολή χάρτη.
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-10 text-center">
+                    <div class="text-5xl mb-4">📭</div>
+                    <div class="text-xl font-bold text-slate-900 mb-2">Δεν υπάρχουν διαθέσιμες παραλαβές</div>
+                    <div class="text-slate-500">Μόλις ετοιμαστούν νέες παραγγελίες, θα εμφανιστούν εδώ.</div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section>
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900">Σε Διαδρομή</h2>
+                    <p class="text-sm text-slate-500 mt-1">Παραγγελίες που έχεις ήδη παραλάβει</p>
+                </div>
+            </div>
+
+            <div class="grid gap-5">
+                {% for order in active_deliveries %}
+                <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm hover:shadow-lg transition">
+                    <div class="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4 mb-5">
+                        <div>
+                            <div class="text-xl font-bold text-slate-900"><a href="{% url 'orders:order_detail' order.id %}" class="hover:underline font-semibold text-slate-900">
+    {{ order.order_code }}
+</a></div>
+                            <div class="text-sm text-slate-500 mt-1">{{ order.source_branch.name }} → {{ order.destination_branch.name }}</div>
+                        </div>
+
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-4 py-2 text-xs font-semibold rounded-full bg-violet-100 text-violet-700">Καθ’ οδόν</span>
+                            {% if order.estimated_minutes %}
+                                <span class="px-4 py-2 text-xs font-semibold rounded-full bg-sky-100 text-sky-700">ETA {{ order.estimated_minutes }} λεπτά</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="grid lg:grid-cols-2 gap-6 mb-5">
+                        <div>
+                            <div class="grid md:grid-cols-3 gap-4 mb-5">
+                                <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
+                                    <div class="text-xs uppercase tracking-wide text-slate-500 mb-2">Αφετηρία</div>
+                                    <div class="font-semibold text-slate-900">{{ order.source_branch.name }}</div>
+                                </div>
+                                <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
+                                    <div class="text-xs uppercase tracking-wide text-slate-500 mb-2">Προορισμός</div>
+                                    <div class="font-semibold text-slate-900">{{ order.destination_branch.name }}</div>
+                                </div>
+                                <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
+                                    <div class="text-xs uppercase tracking-wide text-slate-500 mb-2">Ώρα Παραλαβής</div>
+                                    <div class="font-semibold text-slate-900">
+                                        {% if order.picked_up_at %}
+                                            {{ order.picked_up_at|date:"d/m/Y H:i" }}
+                                        {% else %}
+                                            —
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-5">
+                                <div class="text-sm font-semibold text-slate-800 mb-3">Προϊόντα</div>
+                                <div class="overflow-hidden rounded-2xl border border-slate-200">
+                                    <table class="w-full text-sm">
+                                        <thead class="bg-slate-50 text-slate-600">
+                                            <tr>
+                                                <th class="text-left px-4 py-3 font-semibold">Προϊόν</th>
+                                                <th class="text-left px-4 py-3 font-semibold">Ποσότητα</th>
+                                                <th class="text-left px-4 py-3 font-semibold">Μονάδα</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for item in order.visible_items %}
+                                            <tr class="border-t border-slate-200">
+                                                <td class="px-4 py-3">{{ item.product.name }}</td>
+                                                <td class="px-4 py-3">{{ item.quantity }}</td>
+                                                <td class="px-4 py-3">{{ item.product.unit.code }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <form method="post" action="{% url 'orders:driver_deliver_order' order.id %}">
+                                {% csrf_token %}
+                                <button class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-2xl font-semibold shadow-sm transition">
+                                    🚚 Ολοκλήρωση Παράδοσης
+                                </button>
+                            </form>
+                        </div>
+
+                        <div>
+                            {% if order.has_map_data %}
+                            <div class="rounded-2xl border border-slate-200 p-4 bg-slate-50">
+                                <div class="text-sm font-semibold text-slate-800 mb-3">Διαδρομή</div>
+                                <div id="{{ order.map_id }}" class="delivery-map"></div>
+                            </div>
+                            {% else %}
+                            <div class="rounded-2xl border border-dashed border-slate-300 p-6 bg-slate-50 text-slate-500 text-sm">
+                                Δεν υπάρχουν ακόμα coordinates στα υποκαταστήματα για προβολή χάρτη.
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-10 text-center">
+                    <div class="text-5xl mb-4">🚚</div>
+                    <div class="text-xl font-bold text-slate-900 mb-2">Δεν υπάρχουν ενεργές διαδρομές</div>
+                    <div class="text-slate-500">Οι παραγγελίες που θα παραλάβεις θα εμφανίζονται εδώ.</div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section>
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900">Ολοκληρωμένες Παραδόσεις</h2>
+                    <p class="text-sm text-slate-500 mt-1">Οι πρόσφατες παραδόσεις που ολοκλήρωσες</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-slate-50">
+                            <tr class="text-slate-600">
+                                <th class="text-left px-6 py-4 font-semibold">Κωδικός</th>
+                                <th class="text-left px-6 py-4 font-semibold">Διαδρομή</th>
+                                <th class="text-left px-6 py-4 font-semibold">Παράδοση</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in completed_deliveries %}
+                            <tr class="border-t border-slate-200">
+                                <td class="px-6 py-4 font-semibold text-slate-900"><a href="{% url 'orders:order_detail' order.id %}" class="hover:underline font-semibold text-slate-900">
+    {{ order.order_code }}
+</a></td>
+                                <td class="px-6 py-4 text-slate-700">{{ order.source_branch.name }} → {{ order.destination_branch.name }}</td>
+                                <td class="px-6 py-4 text-slate-700">
+                                    {% if order.delivered_at %}
+                                        {{ order.delivered_at|date:"d/m/Y H:i" }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="px-6 py-10 text-center text-slate-500">
+                                    Δεν υπάρχουν ολοκληρωμένες παραδόσεις ακόμα.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    {% else %}
+
+    <div class="grid gap-6">
+        {% for order in orders %}
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 hover:shadow-lg transition duration-200">
+
+            <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-5">
+                <div>
+                    <div class="text-xl font-bold text-slate-900"><a href="{% url 'orders:order_detail' order.id %}" class="hover:underline font-semibold text-slate-900">
+    {{ order.order_code }}
+</a></div>
+                    <div class="text-sm text-slate-500 mt-1">
+                        Δημιουργήθηκε: {{ order.created_at|date:"d/m/Y H:i" }}
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap gap-2">
+                    {% if order.status == 'submitted' %}
+                        <span class="px-4 py-2 text-xs font-semibold rounded-full bg-slate-100 text-slate-700">Υποβλήθηκε</span>
+                    {% elif order.status == 'in_progress' %}
+                        <span class="px-4 py-2 text-xs font-semibold rounded-full bg-amber-100 text-amber-700">Σε προετοιμασία</span>
+                    {% elif order.status == 'ready_for_pickup' %}
+                        <span class="px-4 py-2 text-xs font-semibold rounded-full bg-sky-100 text-sky-700">Έτοιμη για παραλαβή</span>
+                    {% elif order.status == 'picked_up' %}
+                        <span class="px-4 py-2 text-xs font-semibold rounded-full bg-violet-100 text-violet-700">Καθ’ οδόν</span>
+                    {% elif order.status == 'delivered' %}
+                        <span class="px-4 py-2 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700">Παραδόθηκε</span>
+                    {% elif order.status == 'cancelled' %}
+                        <span class="px-4 py-2 text-xs font-semibold rounded-full bg-rose-100 text-rose-700">Ακυρώθηκε</span>
+                    {% else %}
+                        <span class="px-4 py-2 text-xs font-semibold rounded-full bg-slate-100 text-slate-700">{{ order.get_status_display }}</span>
+                    {% endif %}
+
+                    {% if order.priority == 'urgent' %}
+                        <span class="px-4 py-2 text-xs font-semibold rounded-full bg-rose-100 text-rose-700">Επείγουσα</span>
+                    {% elif order.priority == 'high' %}
+                        <span class="px-4 py-2 text-xs font-semibold rounded-full bg-orange-100 text-orange-700">Υψηλή</span>
+                    {% elif order.priority == 'normal' %}
+                        <span class="px-4 py-2 text-xs font-semibold rounded-full bg-slate-100 text-slate-700">Κανονική</span>
+                    {% elif order.priority == 'low' %}
+                        <span class="px-4 py-2 text-xs font-semibold rounded-full bg-stone-100 text-stone-700">Χαμηλή</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <div class="grid md:grid-cols-3 gap-4 mb-6">
+                        <div class="rounded-2xl bg-slate-50 p-4 border border-slate-200">
+                            <div class="text-xs uppercase tracking-wide text-slate-500 mb-2">Αφετηρία</div>
+                            <div class="font-semibold text-slate-900">{{ order.source_branch.name }}</div>
+                        </div>
+
+                        <div class="rounded-2xl bg-slate-50 p-4 border border-slate-200">
+                            <div class="text-xs uppercase tracking-wide text-slate-500 mb-2">Προορισμός</div>
+                            <div class="font-semibold text-slate-900">{{ order.destination_branch.name }}</div>
+                        </div>
+
+                        <div class="rounded-2xl bg-slate-50 p-4 border border-slate-200">
+                            <div class="text-xs uppercase tracking-wide text-slate-500 mb-2">Οδηγός / ETA</div>
+                            <div class="font-semibold text-slate-900">
+                                {% if order.assigned_driver %}
+                                    {{ order.assigned_driver.username }}
+                                {% else %}
+                                    Δεν έχει ανατεθεί
+                                {% endif %}
+                            </div>
+                            {% if order.estimated_minutes %}
+                                <div class="text-sm text-sky-600 mt-2">ETA: {{ order.estimated_minutes }} λεπτά</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <div class="text-sm font-semibold text-slate-800 mb-3">Προϊόντα παραγγελίας</div>
+                        <div class="overflow-hidden rounded-2xl border border-slate-200">
+                            <table class="w-full text-sm">
+                                <thead class="bg-slate-50 text-slate-600">
+                                    <tr>
+                                        <th class="text-left px-4 py-3 font-semibold">Προϊόν</th>
+                                        <th class="text-left px-4 py-3 font-semibold">Ποσότητα</th>
+                                        <th class="text-left px-4 py-3 font-semibold">Μονάδα</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in order.visible_items %}
+                                    <tr class="border-t border-slate-200">
+                                        <td class="px-4 py-3 text-slate-800">{{ item.product.name }}</td>
+                                        <td class="px-4 py-3 text-slate-700">{{ item.quantity }}</td>
+                                        <td class="px-4 py-3 text-slate-500">{{ item.product.unit.code }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {% if order.notes %}
+                    <div class="mb-6 rounded-2xl bg-amber-50 border border-amber-200 p-4">
+                        <div class="text-xs uppercase tracking-wide text-amber-700 mb-2">Σημειώσεις</div>
+                        <div class="text-sm text-amber-900">{{ order.notes }}</div>
+                    </div>
+                    {% endif %}
+
+                    {% if can_manage_status %}
+                        <div class="pt-2">
+                            <form method="post" class="flex flex-col md:flex-row gap-3 md:items-center">
+                                {% csrf_token %}
+                                <input type="hidden" name="order_id" value="{{ order.id }}">
+
+                                <select name="status" class="px-4 py-3 rounded-2xl border border-slate-300 bg-white text-slate-700">
+                                    {% for value, label in status_choices %}
+                                        <option value="{{ value }}" {% if order.status == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+
+                                <button type="submit"
+                                        class="bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-2xl font-semibold transition">
+                                    Ενημέρωση Κατάστασης
+                                </button>
+                            </form>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div>
+                    {% if order.has_map_data %}
+                    <div class="rounded-2xl border border-slate-200 p-4 bg-slate-50">
+                        <div class="text-sm font-semibold text-slate-800 mb-3">Χάρτης Διαδρομής</div>
+                        <div id="{{ order.map_id }}" class="delivery-map"></div>
+                    </div>
+                    {% else %}
+                    <div class="rounded-2xl border border-dashed border-slate-300 p-6 bg-slate-50 text-slate-500 text-sm">
+                        Για εμφάνιση χάρτη, συμπλήρωσε latitude / longitude στα υποκαταστήματα.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-10 text-center">
+            <div class="text-5xl mb-4">📭</div>
+            <div class="text-xl font-bold text-slate-900 mb-2">Δεν υπάρχουν παραγγελίες</div>
+            <div class="text-slate-500">Όταν δημιουργηθούν νέες παραγγελίες, θα εμφανιστούν εδώ.</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const mapConfigs = [
+        {% if is_driver %}
+            {% for order in available_pickups %}
+                {% if order.has_map_data %}
+                {
+                    id: "{{ order.map_id }}",
+                    sourceLat: {{ order.map_source_lat }},
+                    sourceLng: {{ order.map_source_lng }},
+                    destLat: {{ order.map_destination_lat }},
+                    destLng: {{ order.map_destination_lng }},
+                    sourceName: "{{ order.source_branch.name|escapejs }}",
+                    destName: "{{ order.destination_branch.name|escapejs }}"
+                },
+                {% endif %}
+            {% endfor %}
+            {% for order in active_deliveries %}
+                {% if order.has_map_data %}
+                {
+                    id: "{{ order.map_id }}",
+                    sourceLat: {{ order.map_source_lat }},
+                    sourceLng: {{ order.map_source_lng }},
+                    destLat: {{ order.map_destination_lat }},
+                    destLng: {{ order.map_destination_lng }},
+                    sourceName: "{{ order.source_branch.name|escapejs }}",
+                    destName: "{{ order.destination_branch.name|escapejs }}"
+                },
+                {% endif %}
+            {% endfor %}
+        {% else %}
+            {% for order in orders %}
+                {% if order.has_map_data %}
+                {
+                    id: "{{ order.map_id }}",
+                    sourceLat: {{ order.map_source_lat }},
+                    sourceLng: {{ order.map_source_lng }},
+                    destLat: {{ order.map_destination_lat }},
+                    destLng: {{ order.map_destination_lng }},
+                    sourceName: "{{ order.source_branch.name|escapejs }}",
+                    destName: "{{ order.destination_branch.name|escapejs }}"
+                },
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    ];
+
+    mapConfigs.forEach(function (cfg) {
+        const el = document.getElementById(cfg.id);
+        if (!el) return;
+
+        const map = L.map(cfg.id, {
+            scrollWheelZoom: false
+        });
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        const sourceMarker = L.marker([cfg.sourceLat, cfg.sourceLng]).addTo(map);
+        sourceMarker.bindPopup('Αφετηρία: ' + cfg.sourceName);
+
+        const destMarker = L.marker([cfg.destLat, cfg.destLng]).addTo(map);
+        destMarker.bindPopup('Προορισμός: ' + cfg.destName);
+
+        const routeLine = L.polyline([
+            [cfg.sourceLat, cfg.sourceLng],
+            [cfg.destLat, cfg.destLng]
+        ]).addTo(map);
+
+        map.fitBounds(routeLine.getBounds(), { padding: [20, 20] });
+    });
+});
+</script>
+{% endblock %}

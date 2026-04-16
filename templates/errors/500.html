@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}500 | Luminex{% endblock %}
+{% block page_title %}500 - Εσωτερικό σφάλμα{% endblock %}
+{% block page_subtitle %}Κάτι πήγε στραβά στο σύστημα{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-10 text-center">
+        <div class="text-6xl mb-4">⚠️</div>
+        <h2 class="text-3xl font-bold text-slate-900 mb-3">500 - Internal Server Error</h2>
+        <p class="text-slate-600 mb-6">Παρουσιάστηκε προσωρινό πρόβλημα. Δοκίμασε ξανά σε λίγο.</p>
+        <a href="/" class="bg-slate-900 text-white px-6 py-3 rounded-2xl font-semibold">Επιστροφή στην αρχική</a>
+    </div>
+</div>
+{% endblock %}

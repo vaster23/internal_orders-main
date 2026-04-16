@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Τιμολόγια | Luminex{% endblock %}
+{% block page_title %}Τιμολόγια{% endblock %}
+{% block page_subtitle %}Καταχώριση και παρακολούθηση τιμολογίων{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-6">
+
+    <div class="flex items-center justify-between">
+        <div>
+            <h2 class="text-xl font-bold text-slate-900">Λίστα Τιμολογίων</h2>
+            <p class="text-sm text-slate-500 mt-1">Όλα τα τιμολόγια της εταιρείας</p>
+        </div>
+
+        <a href="{% url 'invoice_create' %}" class="bg-slate-900 hover:bg-slate-800 text-white px-5 py-3 rounded-2xl font-semibold transition shadow-sm">
+            Νέο Τιμολόγιο
+        </a>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Συνολικό Ποσό</div>
+            <div class="text-4xl font-bold text-slate-900">{{ total_amount }} €</div>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Εκκρεμή</div>
+            <div class="text-4xl font-bold text-amber-600">{{ pending_count }}</div>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Πληρωμένα</div>
+            <div class="text-4xl font-bold text-emerald-600">{{ paid_count }}</div>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Ληξιπρόθεσμα</div>
+            <div class="text-4xl font-bold text-rose-600">{{ overdue_count }}</div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
+        <form method="get" class="flex flex-col md:flex-row gap-3">
+            <input
+                type="text"
+                name="q"
+                value="{{ search_query }}"
+                placeholder="Αναζήτηση με αριθμό ή πελάτη/προμηθευτή..."
+                class="px-4 py-3 border border-slate-300 rounded-2xl w-full md:w-80"
+            >
+
+            <select name="status" class="px-4 py-3 border border-slate-300 rounded-2xl w-full md:w-56">
+                <option value="">Όλα τα status</option>
+                <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>Εκκρεμεί</option>
+                <option value="paid" {% if selected_status == 'paid' %}selected{% endif %}>Πληρώθηκε</option>
+                <option value="overdue" {% if selected_status == 'overdue' %}selected{% endif %}>Ληξιπρόθεσμο</option>
+            </select>
+
+            <button type="submit" class="bg-slate-900 text-white px-5 py-3 rounded-2xl font-semibold">
+                Φίλτρο
+            </button>
+
+            <a href="{% url 'invoice_list' %}" class="bg-slate-100 text-slate-700 px-5 py-3 rounded-2xl font-semibold text-center">
+                Reset
+            </a>
+        </form>
+    </div>
+
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50">
+                    <tr class="text-slate-600">
+                        <th class="text-left px-6 py-4 font-semibold">Αριθμός</th>
+                        <th class="text-left px-6 py-4 font-semibold">Τίτλος</th>
+                        <th class="text-left px-6 py-4 font-semibold">Πελάτης / Προμηθευτής</th>
+                        <th class="text-left px-6 py-4 font-semibold">Ποσό</th>
+                        <th class="text-left px-6 py-4 font-semibold">Ημ/νία</th>
+                        <th class="text-left px-6 py-4 font-semibold">Λήξη</th>
+                        <th class="text-left px-6 py-4 font-semibold">Status</th>
+                        <th class="text-left px-6 py-4 font-semibold">Χρήστης</th>
+                        <th class="text-left px-6 py-4 font-semibold">Ενέργειες</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for invoice in invoices %}
+                    <tr class="border-t border-slate-200 hover:bg-slate-50">
+                        <td class="px-6 py-4 font-semibold text-slate-900">{{ invoice.invoice_number }}</td>
+                        <td class="px-6 py-4 text-slate-700">{{ invoice.title }}</td>
+                        <td class="px-6 py-4 text-slate-700">{{ invoice.partner_name }}</td>
+                        <td class="px-6 py-4 text-slate-700">{{ invoice.amount }} €</td>
+                        <td class="px-6 py-4 text-slate-700">{{ invoice.issue_date|date:"d/m/Y" }}</td>
+                        <td class="px-6 py-4 text-slate-700">
+                            {% if invoice.due_date %}
+                                {{ invoice.due_date|date:"d/m/Y" }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+    {% if invoice.computed_status == 'paid' %}
+        <span class="px-3 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700">Πληρώθηκε</span>
+    {% elif invoice.computed_status == 'pending' %}
+        <span class="px-3 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-700">Εκκρεμεί</span>
+    {% elif invoice.computed_status == 'overdue' %}
+        <span class="px-3 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-700">Ληξιπρόθεσμο</span>
+    {% endif %}
+</td>
+                        <td class="px-6 py-4 text-slate-500">{{ invoice.created_by.username }}</td>
+                        <td class="px-6 py-4">
+                            <div class="flex gap-2">
+                                <a href="{% url 'invoice_edit' invoice.id %}" class="px-3 py-1 rounded-lg bg-sky-100 text-sky-700 text-xs font-semibold">
+                                    Edit
+                                </a>
+
+                                <a href="{% url 'invoice_delete' invoice.id %}" class="px-3 py-1 rounded-lg bg-rose-100 text-rose-700 text-xs font-semibold">
+                                    Delete
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="px-6 py-12 text-center text-slate-500">
+                            Δεν υπάρχουν τιμολόγια ακόμα.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

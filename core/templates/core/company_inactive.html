@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Λογαριασμός Μη Ενεργός | Luminex{% endblock %}
+{% block page_title %}Η εταιρεία δεν είναι ενεργή{% endblock %}
+{% block page_subtitle %}Η πρόσβαση στο σύστημα έχει απενεργοποιηθεί προσωρινά{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="bg-white rounded-3xl border border-rose-200 shadow-sm p-10 text-center">
+        <div class="text-6xl mb-4">⛔</div>
+        <h2 class="text-3xl font-bold text-slate-900 mb-3">Πρόσβαση μη διαθέσιμη</h2>
+
+        {% if company %}
+        <p class="text-slate-600 mb-6">
+            Η εταιρεία <strong>{{ company.name }}</strong> είναι προσωρινά ανενεργή.
+            Επικοινωνήστε με τον διαχειριστή της πλατφόρμας για επανενεργοποίηση.
+        </p>
+        {% else %}
+        <p class="text-slate-600 mb-6">
+            Ο λογαριασμός σας δεν έχει ενεργή πρόσβαση στο σύστημα.
+        </p>
+        {% endif %}
+
+        <a href="{% url 'logout' %}"
+           onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
+           class="inline-block bg-slate-900 text-white px-6 py-3 rounded-2xl font-semibold">
+            Αποσύνδεση
+        </a>
+
+        <form id="logout-form" method="post" action="{% url 'logout' %}" class="hidden">
+            {% csrf_token %}
+        </form>
+    </div>
+</div>
+{% endblock %}

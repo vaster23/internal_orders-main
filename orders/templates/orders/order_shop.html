@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+
+{% block title %}Νέα Παραγγελία | Luminex{% endblock %}
+{% block page_title %}Νέα Παραγγελία{% endblock %}
+{% block page_subtitle %}Καταχώριση εσωτερικής παραγγελίας με προορισμό, προτεραιότητα και προϊόντα{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    {% if error %}
+        <div class="mb-6 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-rose-700 shadow-sm">
+            {{ error }}
+        </div>
+    {% endif %}
+
+    {% if success %}
+        <div class="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-emerald-700 shadow-sm">
+            {{ success }}
+        </div>
+    {% endif %}
+
+    <form method="post" id="order-form" class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        {% csrf_token %}
+
+        <div class="xl:col-span-2 space-y-6">
+            <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
+                <div class="flex items-center justify-between mb-5">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">Στοιχεία Παραγγελίας</h2>
+                        <p class="text-sm text-slate-500 mt-1">Συμπλήρωσε τα βασικά στοιχεία πριν προσθέσεις προϊόντα.</p>
+                    </div>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-5">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Υποκατάστημα Αφετηρίας</label>
+                        <div class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-800">
+                            {% if user_branch %}
+                                {{ user_branch.name }}
+                            {% else %}
+                                Δεν έχει οριστεί υποκατάστημα
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="destination_branch" class="block text-sm font-semibold text-slate-700 mb-2">Υποκατάστημα Προορισμού</label>
+                        <select
+                            id="destination_branch"
+                            name="destination_branch"
+                            class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300"
+                            required
+                        >
+                            <option value="">Επιλογή υποκαταστήματος</option>
+                            {% for branch in branches %}
+                                {% if not user_branch or branch.id != user_branch.id %}
+                                    <option value="{{ branch.id }}" {% if destination_branch_id == branch.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ branch.name }}
+                                    </option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="priority" class="block text-sm font-semibold text-slate-700 mb-2">Προτεραιότητα</label>
+                        <select
+                            id="priority"
+                            name="priority"
+                            class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300"
+                        >
+                            {% for value, label in priority_choices %}
+                                <option value="{{ value }}" {% if priority_value == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Κατάσταση</label>
+                        <div class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-800">
+                            Υποβλήθηκε
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-5">
+                    <label for="notes" class="block text-sm font-semibold text-slate-700 mb-2">Σημειώσεις</label>
+                    <textarea
+                        id="notes"
+                        name="notes"
+                        rows="4"
+                        class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300"
+                        placeholder="Πρόσθεσε σημειώσεις για την παραγγελία..."
+                    >{{ notes_value }}</textarea>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
+                <div class="flex items-center justify-between mb-5">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">Επιλογή Προϊόντων</h2>
+                        <p class="text-sm text-slate-500 mt-1">Επίλεξε προϊόντα και ποσότητες για το καλάθι.</p>
+                    </div>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-4 mb-4">
+                    <div class="md:col-span-2">
+                        <label for="product-search" class="block text-sm font-semibold text-slate-700 mb-2">Αναζήτηση προϊόντος</label>
+                        <input
+                            type="text"
+                            id="product-search"
+                            placeholder="Γράψε όνομα προϊόντος..."
+                            class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300"
+                        >
+                    </div>
+
+                    <div>
+                        <label for="category-filter" class="block text-sm font-semibold text-slate-700 mb-2">Κατηγορία</label>
+                        <select
+                            id="category-filter"
+                            class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300"
+                        >
+                            <option value="">Όλες οι κατηγορίες</option>
+                            {% for category in categories %}
+                                <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="overflow-hidden rounded-3xl border border-slate-200">
+                    <div class="max-h-[520px] overflow-y-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-slate-50 sticky top-0">
+                                <tr class="text-slate-600">
+                                    <th class="text-left px-4 py-3 font-semibold">Προϊόν</th>
+                                    <th class="text-left px-4 py-3 font-semibold">Κατηγορία</th>
+                                    <th class="text-left px-4 py-3 font-semibold">Υποκατάστημα</th>
+                                    <th class="text-left px-4 py-3 font-semibold">Μονάδα</th>
+                                    <th class="text-left px-4 py-3 font-semibold">Ποσότητα</th>
+                                    <th class="text-left px-4 py-3 font-semibold">Ενέργεια</th>
+                                </tr>
+                            </thead>
+                            <tbody id="products-table-body">
+                                {% for product in products %}
+                                <tr
+                                    class="border-t border-slate-200 product-row"
+                                    data-name="{{ product.name|lower }}"
+                                    data-category="{{ product.category.id }}"
+                                >
+                                    <td class="px-4 py-3 text-slate-900 font-medium">{{ product.name }}</td>
+                                    <td class="px-4 py-3 text-slate-600">{{ product.category.name }}</td>
+                                    <td class="px-4 py-3 text-slate-600">{{ product.branch.name }}</td>
+                                    <td class="px-4 py-3 text-slate-500">{{ product.unit.code }}</td>
+                                    <td class="px-4 py-3">
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            value="1"
+                                            class="product-quantity w-24 rounded-xl border border-slate-300 px-3 py-2"
+                                        >
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <button
+                                            type="button"
+                                            class="add-product-btn bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl font-medium transition"
+                                            data-product-id="{{ product.id }}"
+                                            data-product-name="{{ product.name }}"
+                                            data-unit-code="{{ product.unit.code }}"
+                                        >
+                                            Προσθήκη
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-6">
+            <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sticky top-8">
+                <div class="mb-5">
+                    <h2 class="text-xl font-bold text-slate-900">Καλάθι Παραγγελίας</h2>
+                    <p class="text-sm text-slate-500 mt-1">Έλεγχος των προϊόντων πριν την υποβολή.</p>
+                </div>
+
+                <div id="empty-cart-message" class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-slate-500">
+                    Δεν έχουν προστεθεί προϊόντα ακόμα.
+                </div>
+
+                <div id="cart-items" class="space-y-3 hidden"></div>
+
+                <input type="hidden" name="items_json" id="items_json">
+
+                <div class="mt-6 border-t border-slate-200 pt-5">
+                    <div class="flex items-center justify-between text-sm text-slate-500 mb-4">
+                        <span>Σύνολο ειδών</span>
+                        <span id="cart-count">0</span>
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 rounded-2xl font-semibold shadow-sm transition"
+                    >
+                        Καταχώριση Παραγγελίας
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    const cart = new Map();
+
+    const cartItemsEl = document.getElementById('cart-items');
+    const emptyCartMessageEl = document.getElementById('empty-cart-message');
+    const itemsJsonEl = document.getElementById('items_json');
+    const cartCountEl = document.getElementById('cart-count');
+    const searchInput = document.getElementById('product-search');
+    const categoryFilter = document.getElementById('category-filter');
+    const productRows = document.querySelectorAll('.product-row');
+
+    function renderCart() {
+        cartItemsEl.innerHTML = '';
+
+        if (cart.size === 0) {
+            emptyCartMessageEl.classList.remove('hidden');
+            cartItemsEl.classList.add('hidden');
+        } else {
+            emptyCartMessageEl.classList.add('hidden');
+            cartItemsEl.classList.remove('hidden');
+        }
+
+        const payload = [];
+
+        cart.forEach((item, productId) => {
+            payload.push({
+                product_id: productId,
+                quantity: item.quantity
+            });
+
+            const row = document.createElement('div');
+            row.className = 'rounded-2xl border border-slate-200 bg-slate-50 p-4';
+
+            row.innerHTML = `
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <div class="font-semibold text-slate-900">${item.name}</div>
+                        <div class="text-sm text-slate-500 mt-1">${item.quantity} ${item.unit}</div>
+                    </div>
+                    <button
+                        type="button"
+                        class="remove-item text-rose-600 hover:text-rose-700 font-medium"
+                        data-product-id="${productId}"
+                    >
+                        Αφαίρεση
+                    </button>
+                </div>
+            `;
+
+            cartItemsEl.appendChild(row);
+        });
+
+        itemsJsonEl.value = JSON.stringify(payload);
+        cartCountEl.textContent = cart.size;
+
+        document.querySelectorAll('.remove-item').forEach(button => {
+            button.addEventListener('click', () => {
+                const productId = button.dataset.productId;
+                cart.delete(productId);
+                renderCart();
+            });
+        });
+    }
+
+    document.querySelectorAll('.add-product-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            const row = button.closest('tr');
+            const quantityInput = row.querySelector('.product-quantity');
+            const quantity = quantityInput.value.trim();
+
+            if (!quantity || Number(quantity) <= 0) {
+                alert('Δώσε έγκυρη ποσότητα.');
+                return;
+            }
+
+            const productId = button.dataset.productId;
+            cart.set(productId, {
+                name: button.dataset.productName,
+                unit: button.dataset.unitCode,
+                quantity: quantity
+            });
+
+            renderCart();
+        });
+    });
+
+    function filterProducts() {
+        const searchValue = searchInput.value.toLowerCase().trim();
+        const categoryValue = categoryFilter.value;
+
+        productRows.forEach(row => {
+            const matchesSearch = row.dataset.name.includes(searchValue);
+            const matchesCategory = !categoryValue || row.dataset.category === categoryValue;
+
+            row.style.display = matchesSearch && matchesCategory ? '' : 'none';
+        });
+    }
+
+    searchInput.addEventListener('input', filterProducts);
+    categoryFilter.addEventListener('change', filterProducts);
+</script>
+{% endblock %}

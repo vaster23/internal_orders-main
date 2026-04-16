@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Είσοδος | Luminex</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-[#06111f] flex items-center justify-center px-4 py-10 overflow-hidden">
+
+    <div class="absolute inset-0">
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.16),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(125,211,252,0.10),_transparent_30%),linear-gradient(180deg,#081120_0%,#040913_100%)]"></div>
+        <div class="absolute top-[-120px] left-1/2 -translate-x-1/2 w-[760px] h-[760px] bg-sky-300/10 blur-3xl rounded-full"></div>
+        <div class="absolute bottom-[-120px] right-[-60px] w-[420px] h-[420px] bg-blue-400/10 blur-3xl rounded-full"></div>
+    </div>
+
+    <div class="relative w-full max-w-md">
+
+        <div class="text-center mb-8">
+
+            <div class="text-5xl font-black tracking-[0.22em] text-white">
+                LUMINEX
+            </div>
+
+            <div class="mt-3 text-slate-400 text-sm tracking-[0.32em] uppercase">
+                Orders Platform
+            </div>
+        </div>
+
+        <div class="relative rounded-[2rem] border border-white/10 bg-white/[0.05] backdrop-blur-2xl shadow-[0_25px_100px_rgba(0,0,0,0.60)] overflow-hidden">
+            <div class="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-200/80 to-transparent"></div>
+            <div class="absolute -top-10 right-8 w-24 h-24 bg-cyan-200/10 blur-2xl rounded-full"></div>
+
+            <div class="p-8 md:p-10">
+                <div class="mb-8">
+                    <h1 class="text-2xl font-bold text-white tracking-wide">Σύνδεση</h1>
+                    <p class="text-sm text-slate-400 mt-2 leading-6">
+                        Αποκτήστε ασφαλή πρόσβαση στο εταιρικό σας περιβάλλον διαχείρισης.
+                    </p>
+                </div>
+
+                {% if form.errors %}
+                <div class="mb-6 rounded-2xl border border-rose-400/20 bg-rose-400/10 px-5 py-4 text-rose-100 text-sm">
+                    Λάθος username ή password.
+                </div>
+                {% endif %}
+
+                <form method="post" class="space-y-5">
+                    {% csrf_token %}
+
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-200 mb-2">
+                            Username
+                        </label>
+                        <input
+                            type="text"
+                            name="username"
+                            class="w-full rounded-2xl border border-white/10 bg-[#07101d]/80 text-white placeholder:text-slate-500 px-4 py-3.5 outline-none focus:border-cyan-200/50 focus:ring-2 focus:ring-cyan-200/15 transition"
+                            placeholder="Εισαγωγή username"
+                            required
+                        >
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-200 mb-2">
+                            Password
+                        </label>
+                        <input
+                            type="password"
+                            name="password"
+                            class="w-full rounded-2xl border border-white/10 bg-[#07101d]/80 text-white placeholder:text-slate-500 px-4 py-3.5 outline-none focus:border-cyan-200/50 focus:ring-2 focus:ring-cyan-200/15 transition"
+                            placeholder="Εισαγωγή password"
+                            required
+                        >
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="w-full mt-2 rounded-2xl bg-gradient-to-r from-sky-200 via-cyan-200 to-blue-200 text-slate-950 py-3.5 font-extrabold tracking-[0.15em] shadow-[0_12px_30px_rgba(56,189,248,0.18)] hover:brightness-105 transition"
+                    >
+                        LOGIN
+                    </button>
+                </form>
+
+                <div class="mt-6 pt-6 border-t border-white/10">
+                    <p class="text-xs text-slate-500 text-center leading-6">
+                        Με τη σύνδεσή σας αποδέχεστε τους
+                        <a href="{% url 'terms' %}" class="text-cyan-200 hover:text-cyan-100 underline underline-offset-4">Όρους Χρήσης</a>
+                        και την
+                        <a href="{% url 'privacy_policy' %}" class="text-cyan-200 hover:text-cyan-100 underline underline-offset-4">Πολιτική Απορρήτου</a>.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-6 text-center">
+            <span class="text-[11px] uppercase tracking-[0.35em] text-slate-600">
+                Premium business software
+            </span>
+        </div>
+    </div>
+
+</body>
+</html>

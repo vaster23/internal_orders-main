@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Platform Home | Luminex{% endblock %}
+{% block page_title %}Platform Home{% endblock %}
+{% block page_subtitle %}Κεντρική εικόνα όλων των πελατών της πλατφόρμας{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-8">
+
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Σύνολο Εταιρειών</div>
+            <div class="text-4xl font-bold text-slate-900">{{ total_companies }}</div>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Ενεργές</div>
+            <div class="text-4xl font-bold text-emerald-600">{{ active_companies }}</div>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Ανενεργές</div>
+            <div class="text-4xl font-bold text-rose-600">{{ inactive_companies }}</div>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Σύνολο Παραγγελιών</div>
+            <div class="text-4xl font-bold text-sky-600">{{ total_orders }}</div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Χρήστες</div>
+            <div class="text-4xl font-bold text-slate-900">{{ total_users }}</div>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Drivers</div>
+            <div class="text-4xl font-bold text-violet-600">{{ total_drivers }}</div>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Branches</div>
+            <div class="text-4xl font-bold text-slate-900">{{ total_branches }}</div>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Τιμολόγια</div>
+            <div class="text-4xl font-bold text-amber-600">{{ total_invoices }}</div>
+        </div>
+    </div>
+
+    <div class="grid xl:grid-cols-2 gap-6">
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-6 py-5 border-b border-slate-200 flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-900">Top Εταιρείες</h2>
+                    <p class="text-sm text-slate-500 mt-1">Με βάση τις παραγγελίες</p>
+                </div>
+
+                <a href="{% url 'platform_companies' %}" class="bg-slate-900 text-white px-4 py-2 rounded-2xl text-sm font-semibold">
+                    Όλες οι Εταιρείες
+                </a>
+            </div>
+
+            <div class="p-6 space-y-4">
+                {% for row in top_companies %}
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div class="flex items-center justify-between">
+                        <div class="font-semibold text-slate-900">
+                            {{ row.company.display_name|default:row.company.name }}
+                        </div>
+                        <div class="text-sm font-semibold text-sky-700">
+                            {{ row.orders_count }} orders
+                        </div>
+                    </div>
+
+                    <div class="text-sm text-slate-500 mt-2">
+                        {{ row.users_count }} users • {{ row.branches_count }} branches • {{ row.invoices_count }} invoices
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-slate-500">Δεν υπάρχουν δεδομένα ακόμα.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-6 py-5 border-b border-slate-200 flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-900">Νεότερες Εταιρείες</h2>
+                    <p class="text-sm text-slate-500 mt-1">Πρόσφατα onboardings</p>
+                </div>
+
+                <a href="{% url 'company_onboarding' %}" class="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-2xl text-sm font-semibold">
+                    Νέα Εταιρεία
+                </a>
+            </div>
+
+            <div class="p-6 space-y-4">
+                {% for company in newest_companies %}
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div class="flex items-center justify-between">
+                        <div class="font-semibold text-slate-900">
+                            {{ company.display_name|default:company.name }}
+                        </div>
+
+                        {% if company.active %}
+                            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700">Ενεργή</span>
+                        {% else %}
+                            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-700">Ανενεργή</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="text-sm text-slate-500 mt-2">
+                        Δημιουργήθηκε: {{ company.created_at|date:"d/m/Y H:i" }}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-slate-500">Δεν υπάρχουν εταιρείες ακόμα.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

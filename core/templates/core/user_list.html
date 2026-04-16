@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Χρήστες | Luminex{% endblock %}
+{% block page_title %}Χρήστες{% endblock %}
+{% block page_subtitle %}Διαχείριση χρηστών εταιρείας{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-6">
+
+    {% if error %}
+    <div class="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-rose-700 shadow-sm">
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <div class="flex items-center justify-between">
+        <div>
+            <h2 class="text-xl font-bold text-slate-900">Λίστα Χρηστών</h2>
+            {% if company %}
+            <p class="text-sm text-slate-500 mt-1">{{ company.display_name|default:company.name }}</p>
+            {% endif %}
+        </div>
+
+        <a href="{% url 'user_add' %}" class="bg-slate-900 hover:bg-slate-800 text-white px-5 py-3 rounded-2xl font-semibold transition shadow-sm">
+            Νέος Χρήστης
+        </a>
+    </div>
+
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50">
+                    <tr class="text-slate-600">
+                        <th class="text-left px-6 py-4 font-semibold">Username</th>
+                        <th class="text-left px-6 py-4 font-semibold">Ρόλος</th>
+                        <th class="text-left px-6 py-4 font-semibold">Υποκατάστημα</th>
+                        <th class="text-left px-6 py-4 font-semibold">Κατάσταση</th>
+                        <th class="text-left px-6 py-4 font-semibold">Password Reset</th>
+                        <th class="text-left px-6 py-4 font-semibold">Ενέργειες</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr class="border-t border-slate-200 hover:bg-slate-50">
+                        <td class="px-6 py-4 font-semibold text-slate-900">{{ user.username }}</td>
+                        <td class="px-6 py-4 text-slate-700">{{ user.role_names|default:"—" }}</td>
+                        <td class="px-6 py-4 text-slate-700">
+                            {% if user.assigned_branch %}
+                                {{ user.assigned_branch.name }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if user.is_active %}
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700">Ενεργός</span>
+                            {% else %}
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-700">Ανενεργός</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if user.must_change_password_value %}
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-700">Απαιτείται</span>
+                            {% else %}
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-slate-100 text-slate-700">Ολοκληρώθηκε</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex flex-wrap gap-2">
+                                <a href="{% url 'user_edit' user.id %}" class="px-4 py-2 rounded-xl bg-sky-100 text-sky-700 hover:bg-sky-200 font-medium transition">
+                                    Edit
+                                </a>
+
+                                <a href="{% url 'admin_reset_user_password' user.id %}" class="px-4 py-2 rounded-xl bg-amber-100 text-amber-700 hover:bg-amber-200 font-medium transition">
+                                    Reset Password
+                                </a>
+
+                                <a href="{% url 'user_delete' user.id %}" class="px-4 py-2 rounded-xl bg-rose-100 text-rose-700 hover:bg-rose-200 font-medium transition">
+                                    Delete
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center text-slate-500">
+                            Δεν υπάρχουν χρήστες ακόμα.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Εταιρείες | Luminex{% endblock %}
+{% block page_title %}Εταιρείες{% endblock %}
+{% block page_subtitle %}Διαχείριση όλων των πελατών της πλατφόρμας{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-8">
+
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Σύνολο Εταιρειών</div>
+            <div class="text-4xl font-bold text-slate-900">{{ total_companies }}</div>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Ενεργές</div>
+            <div class="text-4xl font-bold text-emerald-600">{{ active_companies }}</div>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Ανενεργές</div>
+            <div class="text-4xl font-bold text-rose-600">{{ inactive_companies }}</div>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+            <div class="text-sm text-slate-500 mb-2">Σύνολο Παραγγελιών</div>
+            <div class="text-4xl font-bold text-sky-600">{{ total_platform_orders }}</div>
+        </div>
+    </div>
+
+    <div class="flex items-center justify-between">
+        <div>
+            <h2 class="text-xl font-bold text-slate-900">Λίστα Πελατών</h2>
+            <p class="text-sm text-slate-500 mt-1">Όλες οι εταιρείες που χρησιμοποιούν την πλατφόρμα</p>
+        </div>
+
+        <a href="{% url 'company_onboarding' %}" class="bg-slate-900 text-white px-5 py-3 rounded-2xl font-semibold hover:bg-slate-800">
+            Νέα Εταιρεία
+        </a>
+    </div>
+
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50">
+                    <tr class="text-slate-600">
+                        <th class="text-left px-6 py-4 font-semibold">Εταιρεία</th>
+                        <th class="text-left px-6 py-4 font-semibold">Χρήστες</th>
+                        <th class="text-left px-6 py-4 font-semibold">Drivers</th>
+                        <th class="text-left px-6 py-4 font-semibold">Branches</th>
+                        <th class="text-left px-6 py-4 font-semibold">Orders</th>
+                        <th class="text-left px-6 py-4 font-semibold">Admins</th>
+                        <th class="text-left px-6 py-4 font-semibold">Κατάσταση</th>
+                        <th class="text-left px-6 py-4 font-semibold">Ενέργειες</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in company_rows %}
+                    <tr class="border-t border-slate-200 hover:bg-slate-50">
+                        <td class="px-6 py-4">
+                            <div class="font-semibold text-slate-900">
+                                {{ row.company.display_name|default:row.company.name }}
+                            </div>
+                            <div class="text-xs text-slate-500 mt-1">
+                                {{ row.company.name }}
+                            </div>
+                        </td>
+
+                        <td class="px-6 py-4 text-slate-700">{{ row.users_count }}</td>
+                        <td class="px-6 py-4 text-slate-700">{{ row.drivers_count }}</td>
+                        <td class="px-6 py-4 text-slate-700">{{ row.branches_count }}</td>
+                        <td class="px-6 py-4 text-slate-700">{{ row.orders_count }}</td>
+
+                        <td class="px-6 py-4 text-slate-700">
+                            {% for admin_user in row.admins %}
+                                <div>{{ admin_user.username }}</div>
+                            {% empty %}
+                                —
+                            {% endfor %}
+                        </td>
+
+                        <td class="px-6 py-4">
+                            {% if row.company.active %}
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700">
+                                    Ενεργή
+                                </span>
+                            {% else %}
+                                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-700">
+                                    Ανενεργή
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <td class="px-6 py-4">
+                            <div class="flex flex-wrap gap-2">
+                                <a href="{% url 'platform_company_detail' row.company.id %}" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium">
+                                    View
+                                </a>
+
+                                <form method="post" action="{% url 'toggle_company_active' row.company.id %}">
+                                    {% csrf_token %}
+                                    {% if row.company.active %}
+                                        <button type="submit" class="px-4 py-2 rounded-xl bg-rose-100 text-rose-700 hover:bg-rose-200 font-medium">
+                                            Deactivate
+                                        </button>
+                                    {% else %}
+                                        <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-medium">
+                                            Activate
+                                        </button>
+                                    {% endif %}
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="px-6 py-12 text-center text-slate-500">
+                            Δεν υπάρχουν εταιρείες ακόμα.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

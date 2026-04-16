@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Νέα Εγγραφή | Luminex{% endblock %}
+{% block page_title %}Νέα Οικονομική Εγγραφή{% endblock %}
+{% block page_subtitle %}Καταχώριση εσόδου ή εξόδου{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-8">
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+
+            <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Τύπος</label>
+                    {{ form.type }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Ποσό</label>
+                    {{ form.amount }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Κατηγορία</label>
+                    {{ form.category }}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Ημερομηνία</label>
+                    {{ form.date }}
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-2">Περιγραφή</label>
+                {{ form.description }}
+            </div>
+
+            <div class="pt-2 flex gap-3">
+                <button type="submit" class="bg-slate-900 text-white px-6 py-3 rounded-2xl font-semibold">
+                    Αποθήκευση
+                </button>
+
+                <a href="{% url 'income_expense_list' %}" class="bg-slate-100 text-slate-700 px-6 py-3 rounded-2xl font-semibold">
+                    Επιστροφή
+                </a>
+            </div>
+        </form>
+    </div>
+
+</div>
+{% endblock %}
