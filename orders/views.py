@@ -100,6 +100,7 @@ def order_shop(request):
     success = None
     notes_value = ''
     priority_value = InternalOrder.PRIORITY_NORMAL
+    source_branch_id = ''
     destination_branch_id = ''
     user_branch = UserBranch.objects.filter(user=request.user).select_related('branch__company').first()
 
@@ -107,28 +108,42 @@ def order_shop(request):
         products = products.filter(branch__company=company)
         branches = branches.filter(company=company)
 
+        if user_branch and user_branch.branch and not source_branch_id:
+            source_branch_id = str(user_branch.branch.id)
+
     if request.method == 'POST':
         notes_value = request.POST.get('notes', '').strip()
         priority_value = request.POST.get('priority', InternalOrder.PRIORITY_NORMAL).strip()
+        source_branch_id = request.POST.get('source_branch', '').strip()
         destination_branch_id = request.POST.get('destination_branch', '').strip()
         items_json = request.POST.get('items_json', '').strip()
 
         if company is None:
             error = 'Ο χρήστης δεν έχει συνδεδεμένη εταιρεία.'
-        elif user_branch is None:
-            error = 'Ο χρήστης δεν έχει συνδεδεμένο υποκατάστημα.'
-        elif user_branch.branch.company_id != company.id:
-            error = 'Το υποκατάστημα του χρήστη δεν ανήκει στην εταιρεία του.'
+        elif not source_branch_id:
+            error = 'Διάλεξε υποκατάστημα αφετηρίας.'
         elif not destination_branch_id:
             error = 'Διάλεξε υποκατάστημα προορισμού.'
         elif not items_json:
             error = 'Το καλάθι είναι κενό.'
         else:
             try:
+                source_branch = Branch.objects.get(id=source_branch_id, company=company)
+            except (Branch.DoesNotExist, ValueError):
+                error = 'Το υποκατάστημα αφετηρίας δεν είναι έγκυρο.'
+                source_branch = None
+
+            try:
                 destination_branch = Branch.objects.get(id=destination_branch_id, company=company)
             except (Branch.DoesNotExist, ValueError):
-                error = 'Το υποκατάστημα προορισμού δεν είναι έγκυρο.'
-            else:
+                if not error:
+                    error = 'Το υποκατάστημα προορισμού δεν είναι έγκυρο.'
+                destination_branch = None
+
+            if not error and source_branch.id == destination_branch.id:
+                error = 'Η αφετηρία και ο προορισμός δεν μπορούν να είναι ίδιο υποκατάστημα.'
+
+            if not error:
                 try:
                     submitted_items = json.loads(items_json)
                 except json.JSONDecodeError:
@@ -168,7 +183,7 @@ def order_shop(request):
                         with transaction.atomic():
                             order = InternalOrder.objects.create(
                                 company=company,
-                                source_branch=user_branch.branch,
+                                source_branch=source_branch,
                                 destination_branch=destination_branch,
                                 notes=notes_value,
                                 created_by=request.user,
@@ -225,6 +240,7 @@ def order_shop(request):
         'success': success,
         'notes_value': notes_value,
         'priority_value': priority_value,
+        'source_branch_id': source_branch_id,
         'destination_branch_id': destination_branch_id,
         'user_branch': user_branch.branch if user_branch else None,
         'priority_choices': InternalOrder.PRIORITY_CHOICES,

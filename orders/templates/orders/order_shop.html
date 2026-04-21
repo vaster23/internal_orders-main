@@ -2,7 +2,7 @@
 
 {% block title %}Νέα Παραγγελία | Luminex{% endblock %}
 {% block page_title %}Νέα Παραγγελία{% endblock %}
-{% block page_subtitle %}Καταχώριση εσωτερικής παραγγελίας με προορισμό, προτεραιότητα και προϊόντα{% endblock %}
+{% block page_subtitle %}Καταχώριση εσωτερικής παραγγελίας με αφετηρία, προορισμό, προτεραιότητα και προϊόντα{% endblock %}
 
 {% block content %}
 <div class="max-w-7xl mx-auto">
@@ -32,14 +32,20 @@
 
                 <div class="grid md:grid-cols-2 gap-5">
                     <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-2">Υποκατάστημα Αφετηρίας</label>
-                        <div class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-800">
-                            {% if user_branch %}
-                                {{ user_branch.name }}
-                            {% else %}
-                                Δεν έχει οριστεί υποκατάστημα
-                            {% endif %}
-                        </div>
+                        <label for="source_branch" class="block text-sm font-semibold text-slate-700 mb-2">Υποκατάστημα Αφετηρίας</label>
+                        <select
+                            id="source_branch"
+                            name="source_branch"
+                            class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300"
+                            required
+                        >
+                            <option value="">Επιλογή υποκαταστήματος</option>
+                            {% for branch in branches %}
+                                <option value="{{ branch.id }}" {% if source_branch_id == branch.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ branch.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
                     </div>
 
                     <div>
@@ -52,11 +58,9 @@
                         >
                             <option value="">Επιλογή υποκαταστήματος</option>
                             {% for branch in branches %}
-                                {% if not user_branch or branch.id != user_branch.id %}
-                                    <option value="{{ branch.id }}" {% if destination_branch_id == branch.id|stringformat:"s" %}selected{% endif %}>
-                                        {{ branch.name }}
-                                    </option>
-                                {% endif %}
+                                <option value="{{ branch.id }}" {% if destination_branch_id == branch.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ branch.name }}
+                                </option>
                             {% endfor %}
                         </select>
                     </div>
@@ -223,6 +227,8 @@
     const searchInput = document.getElementById('product-search');
     const categoryFilter = document.getElementById('category-filter');
     const productRows = document.querySelectorAll('.product-row');
+    const sourceBranchSelect = document.getElementById('source_branch');
+    const destinationBranchSelect = document.getElementById('destination_branch');
 
     function renderCart() {
         cartItemsEl.innerHTML = '';
@@ -311,7 +317,30 @@
         });
     }
 
+    function syncBranchChoices() {
+        const sourceValue = sourceBranchSelect.value;
+        const destinationValue = destinationBranchSelect.value;
+
+        Array.from(destinationBranchSelect.options).forEach(option => {
+            if (!option.value) return;
+            option.hidden = option.value === sourceValue;
+        });
+
+        Array.from(sourceBranchSelect.options).forEach(option => {
+            if (!option.value) return;
+            option.hidden = option.value === destinationValue;
+        });
+
+        if (sourceValue && destinationValue && sourceValue === destinationValue) {
+            destinationBranchSelect.value = '';
+        }
+    }
+
+    sourceBranchSelect.addEventListener('change', syncBranchChoices);
+    destinationBranchSelect.addEventListener('change', syncBranchChoices);
     searchInput.addEventListener('input', filterProducts);
     categoryFilter.addEventListener('change', filterProducts);
+
+    syncBranchChoices();
 </script>
 {% endblock %}
