@@ -13,7 +13,6 @@ from django.utils import timezone
 from core.utils import (
     create_audit_log,
     create_company_notification_for_admins,
-    create_company_notification_for_drivers,
     create_notification,
 )
 from core.models import UserBranch, UserCompany
@@ -271,14 +270,27 @@ def order_list(request):
             else:
                 old_status = order.status
                 order.status = new_status
-                order.save(update_fields=['status', 'updated_at'])
+
+                update_fields = ['status', 'updated_at']
+
+                if new_status == InternalOrder.STATUS_PICKED_UP and not order.picked_up_at:
+                    order.picked_up_at = timezone.now()
+                    update_fields.append('picked_up_at')
+                    set_estimated_arrival(order)
+                    update_fields.extend(['estimated_arrival', 'estimated_minutes'])
+
+                if new_status == InternalOrder.STATUS_DELIVERED and not order.delivered_at:
+                    order.delivered_at = timezone.now()
+                    update_fields.append('delivered_at')
+
+                order.save(update_fields=update_fields)
 
                 create_status_log(
                     order=order,
                     user=request.user,
                     old_status=old_status,
                     new_status=new_status,
-                    comment='Αλλαγή κατάστασης από διαχειριστή',
+                    comment='Αλλαγή κατάστασης',
                 )
 
                 create_audit_log(
@@ -344,12 +356,19 @@ def order_list(request):
 
     if is_driver:
         available_pickups = list(orders.filter(
-            status=InternalOrder.STATUS_READY_FOR_PICKUP
+            status__in=[
+                InternalOrder.STATUS_SUBMITTED,
+                InternalOrder.STATUS_IN_PROGRESS,
+                InternalOrder.STATUS_READY_FOR_PICKUP,
+            ],
+            assigned_driver__isnull=True,
         ))
+
         active_deliveries = list(orders.filter(
             status=InternalOrder.STATUS_PICKED_UP,
             assigned_driver=request.user,
         ))
+
         completed_deliveries = list(orders.filter(
             status=InternalOrder.STATUS_DELIVERED,
             assigned_driver=request.user,
@@ -432,12 +451,12 @@ def order_detail(request, order_id):
     eta_status = None
     now = timezone.now()
 
-    if order.status == 'picked_up' and order.estimated_arrival:
+    if order.status == InternalOrder.STATUS_PICKED_UP and order.estimated_arrival:
         if now > order.estimated_arrival:
             eta_status = 'delayed'
         else:
             eta_status = 'on_time'
-    elif order.status == 'delivered' and order.delivered_at and order.estimated_arrival:
+    elif order.status == InternalOrder.STATUS_DELIVERED and order.delivered_at and order.estimated_arrival:
         if order.delivered_at <= order.estimated_arrival:
             eta_status = 'delivered_on_time'
         else:
@@ -528,7 +547,11 @@ def driver_pickup_order(request, order_id):
 
     order = get_object_or_404(InternalOrder, id=order_id, company=company)
 
-    if order.status == InternalOrder.STATUS_READY_FOR_PICKUP:
+    if order.status in [
+        InternalOrder.STATUS_SUBMITTED,
+        InternalOrder.STATUS_IN_PROGRESS,
+        InternalOrder.STATUS_READY_FOR_PICKUP,
+    ] and order.assigned_driver is None:
         old_status = order.status
         order.status = InternalOrder.STATUS_PICKED_UP
         order.assigned_driver = request.user

@@ -11,11 +11,17 @@ def user_is_driver(user):
 
 
 def user_is_admin(user):
-    return user.is_authenticated and user.is_superuser
+    return user.is_authenticated and (
+        user.is_superuser or user.groups.filter(name='admin').exists()
+    )
 
 
 def can_manage_order_status(user):
-    return user_is_admin(user)
+    """
+    Admin και απλοί users μπορούν να αλλάζουν status παραγγελίας.
+    Driver δεν αλλάζει από dropdown — έχει δικά του κουμπιά Παραλαβή / Παράδοση.
+    """
+    return user.is_authenticated and not user_is_driver(user)
 
 
 def create_status_log(order, user, old_status, new_status, comment=''):
