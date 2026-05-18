@@ -2,7 +2,7 @@
 
 {% block title %}{{ order.order_code }} | Luminex{% endblock %}
 {% block page_title %}Παραγγελία {{ order.order_code }}{% endblock %}
-{% block page_subtitle %}Αναλυτική εικόνα παραγγελίας και εκτιμώμενης παράδοσης{% endblock %}
+{% block page_subtitle %}Αναλυτική εικόνα παραγγελίας, προϊόντων και κατάστασης παράδοσης{% endblock %}
 
 {% block content %}
 <div class="max-w-6xl mx-auto space-y-8">
@@ -30,6 +30,12 @@
                 {% endfor %}
             </div>
         </div>
+
+        {% if order.status == 'delivered' %}
+        <div class="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-emerald-700 font-semibold">
+            Η παραγγελία έχει παραδοθεί και έχει κλείσει. Δεν επιτρέπεται νέα ενημέρωση.
+        </div>
+        {% endif %}
     </div>
 
     <div class="grid md:grid-cols-2 xl:grid-cols-4 gap-6">
@@ -70,6 +76,9 @@
         <div class="xl:col-span-2 bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="p-6 border-b border-slate-200">
                 <h2 class="text-lg font-bold text-slate-900">Προϊόντα Παραγγελίας</h2>
+                <p class="text-sm text-slate-500 mt-1">
+                    Αναλυτικός έλεγχος παραλαβής ανά προϊόν.
+                </p>
             </div>
 
             <table class="w-full text-sm">
@@ -77,17 +86,49 @@
                     <tr>
                         <th class="text-left px-6 py-4 font-semibold">Προϊόν</th>
                         <th class="text-left px-6 py-4 font-semibold">Ποσότητα</th>
+                        <th class="text-left px-6 py-4 font-semibold">Παραλαβή</th>
+                        <th class="text-left px-6 py-4 font-semibold">Έλεγχος</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for item in order.visible_items %}
                     <tr class="border-t border-slate-200">
-                        <td class="px-6 py-4 text-slate-800">{{ item.product.name }}</td>
-                        <td class="px-6 py-4 text-slate-700">{{ item.quantity }}</td>
+                        <td class="px-6 py-4 text-slate-800 font-medium">{{ item.product.name }}</td>
+                        <td class="px-6 py-4 text-slate-700">{{ item.quantity }} {{ item.product.unit.code }}</td>
+
+                        <td class="px-6 py-4">
+                            {% if order.status == 'submitted' or order.status == 'in_progress' or order.status == 'ready_for_pickup' %}
+                                <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold">
+                                    Δεν έχει ελεγχθεί
+                                </span>
+                            {% elif item.picked_up_by_driver %}
+                                <span class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">
+                                    Παραλήφθηκε
+                                </span>
+                            {% else %}
+                                <span class="px-3 py-1 rounded-full bg-rose-100 text-rose-700 text-xs font-semibold">
+                                    Δεν παραλήφθηκε
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <td class="px-6 py-4 text-slate-600">
+                            {% if item.pickup_checked_at %}
+                                {{ item.pickup_checked_at|date:"d/m/Y H:i" }}
+                            {% else %}
+                                —
+                            {% endif %}
+
+                            {% if item.pickup_note %}
+                                <div class="mt-1 text-xs text-rose-600">
+                                    {{ item.pickup_note }}
+                                </div>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="2" class="px-6 py-10 text-center text-slate-500">
+                        <td colspan="4" class="px-6 py-10 text-center text-slate-500">
                             Δεν υπάρχουν προϊόντα.
                         </td>
                     </tr>

@@ -15,8 +15,8 @@ class InternalOrder(models.Model):
         (STATUS_SUBMITTED, 'Υποβλήθηκε'),
         (STATUS_IN_PROGRESS, 'Σε προετοιμασία'),
         (STATUS_READY_FOR_PICKUP, 'Έτοιμη για παραλαβή'),
-        (STATUS_PICKED_UP, 'Καθ’ οδόν'),
-        (STATUS_DELIVERED, 'Παραδόθηκε'),
+        (STATUS_PICKED_UP, 'Παραλήφθηκε / Σε διαδρομή'),
+        (STATUS_DELIVERED, 'Παραδόθηκε / Κλειστή'),
         (STATUS_CANCELLED, 'Ακυρώθηκε'),
     ]
 
@@ -40,6 +40,7 @@ class InternalOrder(models.Model):
         blank=True,
     )
     order_code = models.CharField(max_length=30, unique=True, blank=True)
+
     source_branch = models.ForeignKey(
         'products.Branch',
         on_delete=models.CASCADE,
@@ -50,6 +51,7 @@ class InternalOrder(models.Model):
         on_delete=models.CASCADE,
         related_name='orders_to_branch'
     )
+
     created_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -57,6 +59,7 @@ class InternalOrder(models.Model):
         blank=True,
         related_name='created_orders'
     )
+
     assigned_driver = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -70,6 +73,7 @@ class InternalOrder(models.Model):
         choices=STATUS_CHOICES,
         default=STATUS_SUBMITTED
     )
+
     priority = models.CharField(
         max_length=20,
         choices=PRIORITY_CHOICES,
@@ -91,6 +95,10 @@ class InternalOrder(models.Model):
     class Meta:
         ordering = ['-created_at']
 
+    @property
+    def is_closed(self):
+        return self.status == self.STATUS_DELIVERED
+
     def save(self, *args, **kwargs):
         if not self.order_code:
             timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
@@ -107,15 +115,27 @@ class InternalOrderItem(models.Model):
         on_delete=models.CASCADE,
         related_name='items'
     )
+
     product = models.ForeignKey(
         'products.Product',
         on_delete=models.CASCADE,
         related_name='order_items'
     )
+
     quantity = models.DecimalField(max_digits=10, decimal_places=2)
+
+    picked_up_by_driver = models.BooleanField(default=False)
+    pickup_checked_at = models.DateTimeField(null=True, blank=True)
+    pickup_note = models.CharField(max_length=255, blank=True, default='')
 
     class Meta:
         ordering = ['id']
+
+    @property
+    def pickup_status_label(self):
+        if self.picked_up_by_driver:
+            return 'Παραλήφθηκε'
+        return 'Δεν παραλήφθηκε'
 
     def __str__(self):
         return f'{self.order.order_code} - {self.product.name}'
@@ -127,12 +147,14 @@ class OrderStatusLog(models.Model):
         on_delete=models.CASCADE,
         related_name='status_logs'
     )
+
     changed_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
         blank=True
     )
+
     old_status = models.CharField(max_length=30, blank=True, default='')
     new_status = models.CharField(max_length=30)
     comment = models.TextField(blank=True, default='')

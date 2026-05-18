@@ -10,12 +10,12 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
+from core.models import UserBranch, UserCompany
 from core.utils import (
     create_audit_log,
     create_company_notification_for_admins,
     create_notification,
 )
-from core.models import UserBranch, UserCompany
 from products.models import Branch, Category, Product
 
 from .models import InternalOrder, InternalOrderItem
@@ -265,7 +265,10 @@ def order_list(request):
             error = 'Η παραγγελία δεν βρέθηκε.'
         else:
             valid_statuses = {choice[0] for choice in InternalOrder.STATUS_CHOICES}
-            if new_status not in valid_statuses:
+
+            if order.status == InternalOrder.STATUS_DELIVERED:
+                error = 'Η παραγγελία έχει κλείσει και δεν μπορεί να τροποποιηθεί.'
+            elif new_status not in valid_statuses:
                 error = 'Το status δεν είναι έγκυρο.'
             else:
                 old_status = order.status
@@ -428,7 +431,7 @@ def order_detail(request, order_id):
             'created_by',
             'company',
         ).prefetch_related(
-            'items__product',
+            'items__product__unit',
             'status_logs',
         ),
         id=order_id
@@ -442,8 +445,8 @@ def order_detail(request, order_id):
         ('submitted', 'Υποβλήθηκε'),
         ('in_progress', 'Σε προετοιμασία'),
         ('ready_for_pickup', 'Έτοιμη για παραλαβή'),
-        ('picked_up', 'Σε διαδρομή'),
-        ('delivered', 'Παραδόθηκε'),
+        ('picked_up', 'Παραλήφθηκε / Σε διαδρομή'),
+        ('delivered', 'Παραδόθηκε / Κλειστή'),
     ]
 
     order.visible_items = list(order.items.all())
@@ -545,18 +548,46 @@ def driver_pickup_order(request, order_id):
     if request.method != 'POST' or not user_is_driver(request.user):
         return redirect('orders:order_list')
 
-    order = get_object_or_404(InternalOrder, id=order_id, company=company)
+    order = get_object_or_404(
+        InternalOrder.objects.prefetch_related('items__product'),
+        id=order_id,
+        company=company,
+    )
+
+    if order.status == InternalOrder.STATUS_DELIVERED:
+        return redirect('orders:order_list')
 
     if order.status in [
         InternalOrder.STATUS_SUBMITTED,
         InternalOrder.STATUS_IN_PROGRESS,
         InternalOrder.STATUS_READY_FOR_PICKUP,
     ] and order.assigned_driver is None:
+
+        selected_items = request.POST.getlist('picked_items')
+
+        for item in order.items.all():
+            if str(item.id) in selected_items:
+                item.picked_up_by_driver = True
+                item.pickup_checked_at = timezone.now()
+                item.pickup_note = ''
+            else:
+                item.picked_up_by_driver = False
+                item.pickup_checked_at = timezone.now()
+                item.pickup_note = 'Δεν παραλήφθηκε από τον οδηγό'
+
+            item.save(update_fields=[
+                'picked_up_by_driver',
+                'pickup_checked_at',
+                'pickup_note',
+            ])
+
         old_status = order.status
         order.status = InternalOrder.STATUS_PICKED_UP
         order.assigned_driver = request.user
         order.picked_up_at = timezone.now()
+
         set_estimated_arrival(order)
+
         order.save(update_fields=[
             'status',
             'assigned_driver',
@@ -571,7 +602,7 @@ def driver_pickup_order(request, order_id):
             user=request.user,
             old_status=old_status,
             new_status=InternalOrder.STATUS_PICKED_UP,
-            comment='Παραλαβή από οδηγό',
+            comment='Παραλαβή από οδηγό με έλεγχο προϊόντων',
         )
 
         create_audit_log(
@@ -633,7 +664,7 @@ def driver_deliver_order(request, order_id):
             user=request.user,
             old_status=old_status,
             new_status=InternalOrder.STATUS_DELIVERED,
-            comment='Παράδοση από οδηγό',
+            comment='Παράδοση από οδηγό - παραγγελία κλειστή',
         )
 
         create_audit_log(
@@ -652,14 +683,14 @@ def driver_deliver_order(request, order_id):
                 user=order.created_by,
                 company=company,
                 title='Η παραγγελία παραδόθηκε',
-                message=f'Η παραγγελία {order.order_code} ολοκληρώθηκε.',
+                message=f'Η παραγγελία {order.order_code} ολοκληρώθηκε και έκλεισε.',
                 url=order_url,
             )
 
         create_company_notification_for_admins(
             company=company,
             title='Ολοκλήρωση παράδοσης',
-            message=f'Η παραγγελία {order.order_code} παραδόθηκε επιτυχώς.',
+            message=f'Η παραγγελία {order.order_code} παραδόθηκε επιτυχώς και έκλεισε.',
             url=order_url,
         )
 
